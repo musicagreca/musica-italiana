@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canzoniere — Canzoni Italiane con Accordi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --wine:#5E1F2A;
+    --wine-dark:#3E1319;
+    --paper:#F3ECDD;
+    --paper-deep:#EAE0CB;
+    --ink:#2B2420;
+    --gold:#B4903D;
+    --gold-soft:#D9C793;
+    --line:#D8CBA9;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    background-image:
+      radial-gradient(ellipse at top left, rgba(94,31,42,0.04), transparent 55%),
+      repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(43,36,32,0.035) 28px);
+    color:var(--ink);
+    font-family:'Source Sans 3', sans-serif;
+    min-height:100vh;
+  }
+  header.site{
+    padding:56px 24px 40px;
+    text-align:center;
+    border-bottom:2px solid var(--wine);
+    position:relative;
+  }
+  header.site::after{
+    content:'';
+    position:absolute; left:50%; bottom:-6px; transform:translateX(-50%);
+    width:70px; height:3px; background:var(--gold);
+  }
+  h1.brand{
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:clamp(2.2rem, 5vw, 3.4rem);
+    color:var(--wine-dark);
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  h1.brand em{ color:var(--gold); font-style:italic; font-weight:500; }
+  p.tagline{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.82rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--wine);
+    margin:10px 0 0;
+  }
+
+  .wrap{ max-width:880px; margin:0 auto; padding:36px 20px 80px; }
+
+  .nav-tabs{ display:flex; gap:8px; margin-bottom:24px; border-bottom:1px solid var(--line); }
+  .nav-tab{
+    font-family:'JetBrains Mono', monospace; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.06em;
+    background:none; border:none; padding:10px 4px; margin-right:18px; cursor:pointer;
+    color:var(--ink); opacity:0.55; border-bottom:2px solid transparent;
+  }
+  .nav-tab:hover{ opacity:0.85; }
+  .nav-tab.active{ opacity:1; color:var(--wine-dark); border-bottom-color:var(--gold); font-weight:600; }
+
+  .breadcrumb{
+    font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:var(--wine);
+    margin-bottom:18px; cursor:pointer;
+  }
+  .breadcrumb:hover{ color:var(--gold); }
+  .breadcrumb::before{ content:'← '; }
+
+  #search{
+    width:100%; padding:14px 18px;
+    font-family:'Source Sans 3', sans-serif;
+    font-size:1rem;
+    border:2px solid var(--line);
+    border-radius:2px;
+    background:#fffdf8;
+    color:var(--ink);
+    margin-bottom:28px;
+  }
+  #search:focus{ outline:none; border-color:var(--gold); }
+
+  .song-list{ display:flex; flex-direction:column; }
+  .song-row{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:16px 4px;
+    border-bottom:1px solid var(--line);
+    cursor:pointer;
+    transition:padding-left .15s ease;
+  }
+  .song-row:hover{ padding-left:10px; background:rgba(180,144,61,0.08); }
+  .song-title{
+    font-family:'Fraunces', serif; font-weight:600; font-size:1.15rem; color:var(--wine-dark);
+  }
+  .song-meta{
+    font-family:'JetBrains Mono', monospace; font-size:0.78rem; color:var(--wine);
+    opacity:0.75; white-space:nowrap; padding-left:16px;
+  }
+  .empty-msg{
+    text-align:center; padding:60px 20px; color:var(--wine); opacity:0.7;
+    font-family:'Fraunces', serif; font-style:italic; font-size:1.1rem;
+  }
+
+  /* --- elenchi autori / cantanti --- */
+  .browse-list{ display:flex; flex-direction:column; }
+  .browse-row{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:14px 4px; border-bottom:1px solid var(--line); cursor:pointer;
+  }
+  .browse-row:hover{ padding-left:10px; background:rgba(180,144,61,0.08); }
+  .browse-name{ font-family:'Fraunces', serif; font-weight:600; font-size:1.05rem; color:var(--wine-dark); }
+  .browse-count{ font-family:'JetBrains Mono', monospace; font-size:0.76rem; color:var(--wine); opacity:0.7; }
+
+  /* --- vista dettaglio canzone --- */
+  #detail{ display:none; }
+  #detail.active{ display:block; }
+  #list-view.hidden{ display:none; }
+
+  .back-btn{
+    font-family:'JetBrains Mono', monospace; font-size:0.8rem;
+    background:none; border:none; color:var(--wine); cursor:pointer;
+    padding:6px 0; margin-bottom:18px; letter-spacing:0.05em;
+  }
+  .back-btn:hover{ color:var(--gold); }
+  .back-btn::before{ content:'← '; }
+
+  .song-header{ margin-bottom:18px; border-bottom:2px solid var(--wine); padding-bottom:18px; }
+  .song-header h2{
+    font-family:'Fraunces', serif; font-weight:700; font-size:2rem; color:var(--wine-dark); margin:0 0 8px;
+  }
+  .song-info{
+    display:flex; flex-wrap:wrap; gap:6px 18px;
+    font-family:'JetBrains Mono', monospace; font-size:0.82rem; color:var(--ink); opacity:0.85;
+  }
+  .song-info span b{ color:var(--wine); font-weight:600; }
+  .song-info span.linkable{ cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px; }
+  .song-info span.linkable:hover{ color:var(--gold); }
+
+  .view-toggle{ display:flex; gap:10px; margin:16px 0 8px; flex-wrap:wrap; }
+  .view-toggle a{
+    font-family:'JetBrains Mono', monospace; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em;
+    text-decoration:none; color:var(--wine); border:1px solid var(--wine); border-radius:20px;
+    padding:7px 16px; cursor:pointer;
+  }
+  .view-toggle a.active{ background:var(--wine); color:#fffdf8; }
+  .view-toggle a:hover{ background:var(--wine); color:#fffdf8; }
+  .print-btn{ margin-left:auto; }
+  .print-btn a{ border-color:var(--gold); color:var(--gold-soft) !important; background:var(--wine-dark) !important; }
+  .print-btn a:hover{ filter:brightness(1.1); }
+
+  .transpose-bar{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    background:var(--paper-deep); border:1px solid var(--line); border-radius:3px;
+    padding:14px 18px; margin:16px 0 28px;
+  }
+  .transpose-bar label{ font-family:'JetBrains Mono', monospace; font-size:0.78rem; color:var(--wine); text-transform:uppercase; letter-spacing:0.08em; }
+  .step-btn{
+    width:34px; height:34px; border-radius:50%; border:2px solid var(--wine);
+    background:#fffdf8; color:var(--wine-dark); font-size:1.1rem; font-weight:700; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .step-btn:hover{ background:var(--wine); color:#fffdf8; }
+  #key-display{
+    font-family:'Fraunces', serif; font-weight:700; font-size:1.3rem; color:var(--wine-dark);
+    min-width:64px; text-align:center;
+  }
+  #reset-key{
+    font-family:'JetBrains Mono', monospace; font-size:0.75rem; color:var(--wine);
+    background:none; border:1px solid var(--wine); border-radius:20px; padding:5px 12px; cursor:pointer;
+  }
+  #reset-key:hover{ background:var(--wine); color:#fffdf8; }
+
+  .lyrics-block{
+    background:#fffdf8; border:1px solid var(--line); border-radius:3px;
+    padding:26px 28px 30px; overflow-x:auto;
+  }
+  pre.song-body{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.95rem; line-height:1.9;
+    white-space:pre; margin:0;
+  }
+  .chordline{ color:var(--gold); font-weight:600; }
+
+  .lyrics-plain{
+    font-family:'Fraunces', serif; font-size:1.15rem; line-height:2.05; white-space:pre-wrap;
+  }
+
+  .qr-block{
+    margin-top:26px; padding-top:22px; border-top:1px dashed var(--line);
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  }
+  .qr-block img{ border:1px solid var(--line); border-radius:4px; background:#fff; padding:6px; }
+  .qr-caption{ font-family:'JetBrains Mono', monospace; font-size:0.78rem; color:var(--wine); max-width:280px; }
+
+  footer{
+    text-align:center; padding:30px 20px 50px;
+    font-family:'JetBrains Mono', monospace; font-size:0.72rem; color:var(--wine); opacity:0.6;
+  }
+
+  @media (max-width:600px){
+    .song-row{ flex-direction:column; align-items:flex-start; gap:4px; }
+    .song-meta{ padding-left:0; }
+  }
+
+  @media print{
+    header.site, .nav-tabs, .back-btn, .view-toggle, .transpose-bar, footer, #search{ display:none !important; }
+    #list-view{ display:none !important; }
+    body{ background:#fff; }
+    .lyrics-block, .lyrics-plain{ border:none; padding:0; }
+    .song-header{ border-bottom:1px solid #999; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <h1 class="brand">Canzoni<em>ere</em></h1>
+  <p class="tagline">canzoni italiane · accordi · testi</p>
+</header>
+
+<div class="wrap">
+
+  <div id="list-view">
+    <div class="nav-tabs">
+      <button class="nav-tab" data-tab="tutte">Tutte le canzoni</button>
+      <button class="nav-tab" data-tab="autori">Autori</button>
+      <button class="nav-tab" data-tab="cantanti">Cantanti</button>
+    </div>
+
+    <div id="breadcrumb-wrap"></div>
+
+    <input type="text" id="search" placeholder="Cerca per titolo, autore o cantante…">
+    <div class="song-list" id="song-list"></div>
+    <div class="browse-list" id="browse-list" style="display:none;"></div>
+    <div class="empty-msg" id="empty-msg" style="display:none;">Nessuna canzone ancora — aggiungila dal pannello admin.</div>
+  </div>
+
+  <div id="detail">
+    <button class="back-btn" id="back-btn">tutte le canzoni</button>
+    <div class="song-header">
+      <h2 id="d-title"></h2>
+      <div class="song-info">
+        <span><b>Testo:</b> <span class="linkable" id="d-autore-testo" data-role="autore"></span></span>
+        <span><b>Musica:</b> <span class="linkable" id="d-autore-musica" data-role="autore"></span></span>
+        <span><b>Cantante:</b> <span class="linkable" id="d-cantante" data-role="cantante"></span></span>
+        <span><b>Anno:</b> <span id="d-anno"></span></span>
+      </div>
+    </div>
+
+    <div class="view-toggle">
+      <a href="#" id="tab-accordi">Con accordi</a>
+      <a href="#" id="tab-testo">Solo testo</a>
+      <span class="print-btn"><a href="#" id="print-link">Stampa</a></span>
+    </div>
+
+    <div class="transpose-bar" id="transpose-bar">
+      <label>Tonalità</label>
+      <button class="step-btn" id="key-down">−</button>
+      <div id="key-display">—</div>
+      <button class="step-btn" id="key-up">+</button>
+      <button id="reset-key">originale</button>
+    </div>
+
+    <div class="lyrics-block" id="accordi-block">
+      <pre class="song-body" id="d-body"></pre>
+    </div>
+
+    <div class="lyrics-block" id="testo-block" style="display:none;">
+      <div class="lyrics-plain" id="d-body-plain"></div>
+      <div class="qr-block">
+        <img id="qr-img" src="" alt="QR code" width="150" height="150">
+        <div class="qr-caption">Inquadra con la fotocamera del telefono per leggere questo testo sul cellulare.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>canzoniere personale — ad uso privato</footer>
+
+<script src="chords.js"></script>
+<script>
+let SONGS = [];
+let currentSong = null;
+let currentSemitones = 0;
+let currentView = 'accordi';
+
+function getParams(){ return new URLSearchParams(window.location.search); }
+
+async function loadData(){
+  try{
+    const res = await fetch('dati.json?_=' + Date.now());
+    const json = await res.json();
+    SONGS = json.canzoni || [];
+  }catch(e){
+    SONGS = [];
+  }
+  route();
+}
+
+function route(){
+  const p = getParams();
+  const songId = p.get('song');
+  if(songId){
+    const song = SONGS.find(s => s.id === songId);
+    if(song){ openSong(song, p.get('view') || 'accordi'); return; }
+  }
+  closeSong();
+  const filterRole = p.get('filter');
+  const filterName = p.get('nome');
+  if(filterRole && filterName){
+    showFilteredList(filterRole, filterName);
+  } else {
+    const tab = p.get('tab') || 'tutte';
+    setActiveTab(tab);
+  }
+}
+
+function setActiveTab(tab){
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.getElementById('breadcrumb-wrap').innerHTML = '';
+  if(tab === 'tutte'){
+    document.getElementById('search').style.display = 'block';
+    document.getElementById('song-list').style.display = 'flex';
+    document.getElementById('browse-list').style.display = 'none';
+    renderList('');
+  } else {
+    document.getElementById('search').style.display = 'none';
+    document.getElementById('song-list').style.display = 'none';
+    document.getElementById('browse-list').style.display = 'flex';
+    renderBrowse(tab === 'autori' ? 'autore' : 'cantante');
+  }
+}
+
+function splitNames(str){
+  return (str || '').split(',').map(s => s.trim()).filter(Boolean);
+}
+
+function namesForRole(song, role){
+  if(role === 'cantante') return splitNames(song.cantante);
+  return [...splitNames(song.autoreTesto), ...splitNames(song.autoreMusica)];
+}
+
+function renderBrowse(role){
+  const counts = {};
+  SONGS.forEach(song => {
+    namesForRole(song, role).forEach(name => {
+      counts[name] = (counts[name] || 0) + 1;
+    });
+  });
+  const names = Object.keys(counts).sort((a,b) => a.localeCompare(b, 'it'));
+  const el = document.getElementById('browse-list');
+  el.innerHTML = '';
+  if(!names.length){
+    document.getElementById('empty-msg').style.display = 'block';
+    document.getElementById('empty-msg').textContent = 'Nessun nome ancora — aggiungi qualche canzone dal pannello admin.';
+    return;
+  }
+  document.getElementById('empty-msg').style.display = 'none';
+  names.forEach(name => {
+    const row = document.createElement('div');
+    row.className = 'browse-row';
+    row.innerHTML = `<span class="browse-name">${escapeHtml(name)}</span><span class="browse-count">${counts[name]} canzon${counts[name]===1?'e':'i'}</span>`;
+    row.addEventListener('click', () => navigateTo({filter: role, nome: name}));
+    el.appendChild(row);
+  });
+}
+
+function showFilteredList(role, name){
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  const bc = document.getElementById('breadcrumb-wrap');
+  bc.innerHTML = '';
+  const crumb = document.createElement('div');
+  crumb.className = 'breadcrumb';
+  crumb.textContent = (role === 'cantante' ? 'cantanti' : 'autori') + ' — torna all\u2019elenco';
+  crumb.addEventListener('click', () => navigateTo({tab: role === 'cantante' ? 'cantanti' : 'autori'}));
+  bc.appendChild(crumb);
+
+  document.getElementById('search').style.display = 'none';
+  document.getElementById('browse-list').style.display = 'none';
+  document.getElementById('song-list').style.display = 'flex';
+
+  const filtered = SONGS.filter(s => namesForRole(s, role).includes(name))
+    .sort((a,b) => (a.titolo||'').localeCompare(b.titolo||'', 'it'));
+  renderSongRows(filtered, name);
+}
+
+function renderList(filter){
+  const f = (filter || '').toLowerCase();
+  const filtered = SONGS.filter(s =>
+    !f ||
+    (s.titolo||'').toLowerCase().includes(f) ||
+    (s.autoreTesto||'').toLowerCase().includes(f) ||
+    (s.autoreMusica||'').toLowerCase().includes(f) ||
+    (s.cantante||'').toLowerCase().includes(f)
+  ).sort((a,b) => (a.titolo||'').localeCompare(b.titolo||'', 'it'));
+  renderSongRows(filtered);
+}
+
+function renderSongRows(list, headingName){
+  const listEl = document.getElementById('song-list');
+  const emptyEl = document.getElementById('empty-msg');
+  listEl.innerHTML = '';
+  emptyEl.style.display = list.length ? 'none' : 'block';
+  emptyEl.textContent = 'Nessuna canzone trovata.';
+
+  list.forEach(song => {
+    const row = document.createElement('div');
+    row.className = 'song-row';
+    row.innerHTML = `<span class="song-title">${escapeHtml(song.titolo||'Senza titolo')}</span>
+      <span class="song-meta">${escapeHtml(song.cantante||'')}${song.anno ? ' · ' + song.anno : ''}</span>`;
+    row.addEventListener('click', () => navigateTo({song: song.id}));
+    listEl.appendChild(row);
+  });
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+
+function navigateTo(params){
+  const usp = new URLSearchParams();
+  Object.entries(params).forEach(([k,v]) => { if(v) usp.set(k, v); });
+  window.location.search = usp.toString();
+}
+
+function openSong(song, view){
+  currentSong = song;
+  currentSemitones = 0;
+  currentView = view === 'testo' ? 'testo' : 'accordi';
+  document.getElementById('list-view').classList.add('hidden');
+  document.getElementById('detail').classList.add('active');
+
+  document.getElementById('d-title').textContent = song.titolo || '';
+  document.getElementById('d-autore-testo').textContent = song.autoreTesto || '—';
+  document.getElementById('d-autore-musica').textContent = song.autoreMusica || '—';
+  document.getElementById('d-cantante').textContent = song.cantante || '—';
+  document.getElementById('d-anno').textContent = song.anno || '—';
+
+  document.getElementById('d-autore-testo').onclick = () => { if(song.autoreTesto) navigateTo({filter:'autore', nome:song.autoreTesto}); };
+  document.getElementById('d-autore-musica').onclick = () => { if(song.autoreMusica) navigateTo({filter:'autore', nome:song.autoreMusica}); };
+  document.getElementById('d-cantante').onclick = () => { if(song.cantante) navigateTo({filter:'cantante', nome:splitNames(song.cantante)[0]}); };
+
+  applyView();
+  window.scrollTo(0,0);
+}
+
+function applyView(){
+  const isTesto = currentView === 'testo';
+  document.getElementById('tab-accordi').classList.toggle('active', !isTesto);
+  document.getElementById('tab-testo').classList.toggle('active', isTesto);
+  document.getElementById('transpose-bar').style.display = isTesto ? 'none' : 'flex';
+  document.getElementById('accordi-block').style.display = isTesto ? 'none' : 'block';
+  document.getElementById('testo-block').style.display = isTesto ? 'block' : 'none';
+
+  if(isTesto){
+    renderPlainLyrics();
+    updateQr();
+  } else {
+    renderBody();
+  }
+}
+
+function closeSong(){
+  document.getElementById('list-view').classList.remove('hidden');
+  document.getElementById('detail').classList.remove('active');
+}
+
+function renderBody(){
+  if(!currentSong) return;
+  const lines = (currentSong.testo || '').split('\n');
+  const targetKey = shiftKeyName(currentSong.tonalita, currentSemitones);
+  document.getElementById('key-display').textContent = targetKey || '—';
+
+  const bodyEl = document.getElementById('d-body');
+  bodyEl.innerHTML = '';
+  lines.forEach(line => {
+    const div = document.createElement('div');
+    if (isLikelyChordLine(line)) {
+      div.className = 'chordline';
+      div.textContent = transposeChordLine(line, currentSemitones, targetKey);
+    } else {
+      div.textContent = line;
+    }
+    bodyEl.appendChild(div);
+  });
+}
+
+function renderPlainLyrics(){
+  if(!currentSong) return;
+  const lines = (currentSong.testo || '').split('\n').filter(line => !isLikelyChordLine(line));
+  document.getElementById('d-body-plain').textContent = lines.join('\n').replace(/\n{3,}/g, '\n\n');
+}
+
+function updateQr(){
+  if(!currentSong) return;
+  const url = window.location.origin + window.location.pathname + '?song=' + encodeURIComponent(currentSong.id) + '&view=testo';
+  document.getElementById('qr-img').src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(url);
+}
+
+function isLikelyChordLine(line){
+  const trimmed = line.trim();
+  if (!trimmed) return false;
+  const tokens = trimmed.split(/\s+/);
+  const chordTokens = tokens.filter(t => isChordToken(t));
+  return chordTokens.length > 0 && chordTokens.length >= tokens.length * 0.6;
+}
+
+function shiftKeyName(key, semitones){
+  if(!key) return key;
+  const m = key.match(/^(DO|RE|MI|FA|SOL|LA|SI)(#|b)?(m)?$/);
+  if(!m) return key;
+  const transposed = transposeChord(m[1] + (m[2]||''), semitones, null);
+  return transposed + (m[3]||'');
+}
+
+document.getElementById('back-btn').addEventListener('click', () => navigateTo({}));
+document.getElementById('search').addEventListener('input', e => renderList(e.target.value));
+document.getElementById('key-up').addEventListener('click', () => { currentSemitones++; renderBody(); });
+document.getElementById('key-down').addEventListener('click', () => { currentSemitones--; renderBody(); });
+document.getElementById('reset-key').addEventListener('click', () => { currentSemitones = 0; renderBody(); });
+
+document.querySelectorAll('.nav-tab').forEach(btn => {
+  btn.addEventListener('click', () => navigateTo({tab: btn.dataset.tab}));
+});
+
+document.getElementById('tab-accordi').addEventListener('click', (e) => { e.preventDefault(); currentView='accordi'; applyView(); history.replaceState(null,'', '?song='+currentSong.id); });
+document.getElementById('tab-testo').addEventListener('click', (e) => { e.preventDefault(); currentView='testo'; applyView(); history.replaceState(null,'', '?song='+currentSong.id+'&view=testo'); });
+document.getElementById('print-link').addEventListener('click', (e) => { e.preventDefault(); window.print(); });
+
+loadData();
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "canzoni": [
+    {
+      "id": "canzone-di-esempio",
+      "titolo": "Canzone di esempio",
+      "autoreTesto": "Autore Testo",
+      "autoreMusica": "Autore Musica",
+      "cantante": "Cantante",
+      "anno": "2024",
+      "tonalita": "DOm",
+      "testo": "DOm              FA           SIb\nQuesta è una riga di esempio col testo\nDOm         SOL7\nE qui la seconda riga\n\n(ritornello)\nFA        DOm\nSostituisci pure tutto\nSIb              SOL7\ndal pannello admin.html"
+    }
+  ]
+}
