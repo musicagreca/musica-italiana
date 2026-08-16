@@ -199,6 +199,17 @@
   .qr-block img{ border:1px solid var(--line); border-radius:4px; background:#fff; padding:6px; }
   .qr-caption{ font-family:'JetBrains Mono', monospace; font-size:0.78rem; color:var(--wine); max-width:280px; }
 
+  .notes-block{
+    margin-top:22px; background:#fffdf8; border:1px solid var(--line); border-radius:3px;
+    padding:18px 24px;
+  }
+  .notes-block h3{
+    font-family:'JetBrains Mono', monospace; font-size:0.78rem; text-transform:uppercase;
+    letter-spacing:0.06em; color:var(--wine); margin:0 0 8px;
+  }
+  .notes-block p{ margin:0; font-family:'Fraunces', serif; font-size:1.02rem; line-height:1.7; white-space:pre-wrap; }
+  @media print{ .notes-block{ border:none; padding:0; } }
+
   footer{
     text-align:center; padding:30px 20px 50px;
     font-family:'JetBrains Mono', monospace; font-size:0.72rem; color:var(--wine); opacity:0.6;
@@ -278,6 +289,11 @@
         <img id="qr-img" src="" alt="QR code" width="150" height="150">
         <div class="qr-caption">Inquadra con la fotocamera del telefono per leggere questo testo sul cellulare.</div>
       </div>
+    </div>
+
+    <div class="notes-block" id="notes-block" style="display:none;">
+      <h3>Note</h3>
+      <p id="d-note"></p>
     </div>
   </div>
 
@@ -445,6 +461,13 @@ function openSong(song, view){
   document.getElementById('d-autore-musica').textContent = song.autoreMusica || '—';
   document.getElementById('d-cantante').textContent = song.cantante || '—';
   document.getElementById('d-anno').textContent = song.anno || '—';
+
+  if(song.note && song.note.trim()){
+    document.getElementById('d-note').textContent = song.note;
+    document.getElementById('notes-block').style.display = 'block';
+  }else{
+    document.getElementById('notes-block').style.display = 'none';
+  }
 
   document.getElementById('d-autore-testo').onclick = () => { if(song.autoreTesto) navigateTo({filter:'autore', nome:song.autoreTesto}); };
   document.getElementById('d-autore-musica').onclick = () => { if(song.autoreMusica) navigateTo({filter:'autore', nome:song.autoreMusica}); };
