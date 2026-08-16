@@ -87,6 +87,22 @@
   }
   #search:focus{ outline:none; border-color:var(--gold); }
 
+  .alpha-bar{
+    display:flex; flex-wrap:wrap; gap:4px;
+    margin-bottom:26px; padding-bottom:20px;
+    border-bottom:1px solid var(--line);
+  }
+  .alpha-btn{
+    font-family:'JetBrains Mono', monospace; font-size:0.82rem;
+    border:1px solid var(--line); background:#fffdf8; color:var(--wine);
+    padding:5px 9px; border-radius:2px; cursor:pointer;
+    min-width:28px; text-align:center;
+  }
+  .alpha-btn:hover{ border-color:var(--gold); color:var(--wine-dark); }
+  .alpha-btn.active{ background:var(--wine); border-color:var(--wine); color:#fffdf8; }
+  .alpha-btn.disabled{ opacity:0.3; cursor:default; pointer-events:none; }
+  .alpha-btn.all{ font-family:'Source Sans 3', sans-serif; font-weight:600; padding:5px 12px; }
+
   .song-list{ display:flex; flex-direction:column; }
   .song-row{
     display:flex; justify-content:space-between; align-items:baseline;
@@ -221,7 +237,7 @@
   }
 
   @media print{
-    header.site, .nav-tabs, .back-btn, .view-toggle, .transpose-bar, footer, #search{ display:none !important; }
+    header.site, .nav-tabs, .back-btn, .view-toggle, .transpose-bar, footer, #search, .alpha-bar{ display:none !important; }
     #list-view{ display:none !important; }
     body{ background:#fff; }
     .lyrics-block, .lyrics-plain{ border:none; padding:0; }
@@ -248,6 +264,7 @@
     <div id="breadcrumb-wrap"></div>
 
     <input type="text" id="search" placeholder="Cerca per titolo, autore o cantante…">
+    <div class="alpha-bar" id="alpha-bar"></div>
     <div class="song-list" id="song-list"></div>
     <div class="browse-list" id="browse-list" style="display:none;"></div>
     <div class="empty-msg" id="empty-msg" style="display:none;">Nessuna canzone ancora — aggiungila dal pannello admin.</div>
@@ -307,6 +324,8 @@ let SONGS = [];
 let currentSong = null;
 let currentSemitones = 0;
 let currentView = 'accordi';
+let currentTab = 'tutte';
+let currentLetter = null;
 
 function getParams(){ return new URLSearchParams(window.location.search); }
 
@@ -340,6 +359,8 @@ function route(){
 }
 
 function setActiveTab(tab){
+  currentTab = tab;
+  currentLetter = null;
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.getElementById('breadcrumb-wrap').innerHTML = '';
   if(tab === 'tutte'){
@@ -355,6 +376,40 @@ function setActiveTab(tab){
   }
 }
 
+function normalizeLetter(str){
+  const c = (str || '').trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').charAt(0).toUpperCase();
+  return /[A-Z]/.test(c) ? c : '';
+}
+
+function renderAlphaBar(keys){
+  const present = new Set(keys.map(normalizeLetter).filter(Boolean));
+  const bar = document.getElementById('alpha-bar');
+  bar.innerHTML = '';
+
+  const allBtn = document.createElement('button');
+  allBtn.className = 'alpha-btn all' + (currentLetter === null ? ' active' : '');
+  allBtn.textContent = 'Tutti';
+  allBtn.addEventListener('click', () => { currentLetter = null; refreshCurrentView(); });
+  bar.appendChild(allBtn);
+
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(letter => {
+    const has = present.has(letter);
+    const btn = document.createElement('button');
+    btn.className = 'alpha-btn' + (currentLetter === letter ? ' active' : '') + (has ? '' : ' disabled');
+    btn.textContent = letter;
+    if(has) btn.addEventListener('click', () => { currentLetter = letter; refreshCurrentView(); });
+    bar.appendChild(btn);
+  });
+}
+
+function refreshCurrentView(){
+  if(currentTab === 'tutte'){
+    renderList(document.getElementById('search').value);
+  } else {
+    renderBrowse(currentTab === 'autori' ? 'autore' : 'cantante');
+  }
+}
+
 function splitNames(str){
   return (str || '').split(',').map(s => s.trim()).filter(Boolean);
 }
@@ -365,18 +420,26 @@ function namesForRole(song, role){
 }
 
 function renderBrowse(role){
+  document.getElementById('alpha-bar').style.display = 'flex';
   const counts = {};
   SONGS.forEach(song => {
     namesForRole(song, role).forEach(name => {
       counts[name] = (counts[name] || 0) + 1;
     });
   });
-  const names = Object.keys(counts).sort((a,b) => a.localeCompare(b, 'it'));
+  const allNames = Object.keys(counts).sort((a,b) => a.localeCompare(b, 'it'));
+  renderAlphaBar(allNames);
+  const names = currentLetter ? allNames.filter(n => normalizeLetter(n) === currentLetter) : allNames;
   const el = document.getElementById('browse-list');
   el.innerHTML = '';
-  if(!names.length){
+  if(!allNames.length){
     document.getElementById('empty-msg').style.display = 'block';
     document.getElementById('empty-msg').textContent = 'Nessun nome ancora — aggiungi qualche canzone dal pannello admin.';
+    return;
+  }
+  if(!names.length){
+    document.getElementById('empty-msg').style.display = 'block';
+    document.getElementById('empty-msg').textContent = 'Nessun nome con questa iniziale.';
     return;
   }
   document.getElementById('empty-msg').style.display = 'none';
@@ -400,6 +463,7 @@ function showFilteredList(role, name){
   bc.appendChild(crumb);
 
   document.getElementById('search').style.display = 'none';
+  document.getElementById('alpha-bar').style.display = 'none';
   document.getElementById('browse-list').style.display = 'none';
   document.getElementById('song-list').style.display = 'flex';
 
@@ -409,14 +473,18 @@ function showFilteredList(role, name){
 }
 
 function renderList(filter){
+  document.getElementById('alpha-bar').style.display = 'flex';
   const f = (filter || '').toLowerCase();
-  const filtered = SONGS.filter(s =>
+  const bySearch = SONGS.filter(s =>
     !f ||
     (s.titolo||'').toLowerCase().includes(f) ||
     (s.autoreTesto||'').toLowerCase().includes(f) ||
     (s.autoreMusica||'').toLowerCase().includes(f) ||
     (s.cantante||'').toLowerCase().includes(f)
-  ).sort((a,b) => (a.titolo||'').localeCompare(b.titolo||'', 'it'));
+  );
+  renderAlphaBar(bySearch.map(s => s.titolo));
+  const filtered = (currentLetter ? bySearch.filter(s => normalizeLetter(s.titolo) === currentLetter) : bySearch)
+    .sort((a,b) => (a.titolo||'').localeCompare(b.titolo||'', 'it'));
   renderSongRows(filtered);
 }
 
