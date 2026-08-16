@@ -1,14 +1,13 @@
 {
   "canzoni": [
     {
-      "id": "canzone-di-esempio",
-      "titolo": "Canzone di esempio",
-      "autoreTesto": "Autore Testo",
-      "autoreMusica": "Autore Musica",
-      "cantante": "Cantante",
-      "anno": "2024",
-      "tonalita": "DOm",
-      "testo": "DOm              FA           SIb\nQuesta è una riga di esempio col testo\nDOm         SOL7\nE qui la seconda riga\n\n(ritornello)\nFA        DOm\nSostituisci pure tutto\nSIb              SOL7\ndal pannello admin.html"
+      "titolo": "Amara terra mia",
+      "autoreTesto": "Domenico Modugno",
+      "autoreMusica": "Enrica Bonaccorti",
+      "cantante": "Domenico Modugno",
+      "anno": "",
+      "tonalita": "",
+      "testo": "LAm\nLAm              LAdim         LAm\nSole alla valle e sole alla collina\nLAm              LAdim         LAm\nPer le campagne non c'è più nessuno\nLA7           REm\nAddio, addio, amore\nMI      LAm\nIo vado via\nLAm     MI   LAm\nAmara terra mia\nLAm MIm  MI7  LAm\nAmara e bella\n\nLAm              LAdim         LAm\nCieli infiniti e volti come pietra\nLAm              LAdim         LAm\nMani incallite ormai senza speranza\nLA7           REm\nAddio, addio, amore\nMI      LAm\nIo vado via\nLAm     MI   LAm\nAmara terra mia\nLAm MIm  MI7  LAm\nAmara e bel---la\n\nLA               LAdim         LA\nFra gli uliveti è nata già la luna\nLA               LAdim         LA\nUn bimbo piange e allatta un seno magro\nLA7           REm\nAddio, addio, amore\nMI      LAm\nIo vado via\nLAm     MI   LAm\nAmara terra mia\nLAm MIm  MI7  LAm\nAmara e bella"
     }
   ]
 }
