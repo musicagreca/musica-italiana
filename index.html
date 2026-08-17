@@ -377,8 +377,10 @@ function setActiveTab(tab){
 }
 
 function normalizeLetter(str){
-  const c = (str || '').trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').charAt(0).toUpperCase();
-  return /[A-Z]/.test(c) ? c : '';
+  const raw = (str || '').trim();
+  if(!raw) return '';
+  const c = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').charAt(0).toUpperCase();
+  return /[A-Z]/.test(c) ? c : '#';
 }
 
 function renderAlphaBar(keys){
@@ -392,7 +394,7 @@ function renderAlphaBar(keys){
   allBtn.addEventListener('click', () => { currentLetter = null; refreshCurrentView(); });
   bar.appendChild(allBtn);
 
-  'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(letter => {
+  ['#', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')].forEach(letter => {
     const has = present.has(letter);
     const btn = document.createElement('button');
     btn.className = 'alpha-btn' + (currentLetter === letter ? ' active' : '') + (has ? '' : ' disabled');
