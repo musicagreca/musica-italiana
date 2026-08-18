@@ -56,6 +56,67 @@
     color:var(--wine);
     margin:10px 0 0;
   }
+  .tuner-open-btn{
+    margin-top:18px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78rem;
+    background:#fffdf8; color:var(--wine);
+    border:1px solid var(--gold-soft); border-radius:20px;
+    padding:7px 16px; cursor:pointer;
+  }
+  .tuner-open-btn:hover{ border-color:var(--gold); }
+
+  #tuner-lightbox{
+    display:none; position:fixed; inset:0; background:rgba(43,36,32,.72);
+    z-index:999; align-items:center; justify-content:center; padding:16px;
+  }
+  #tuner-lightbox.open{ display:flex; }
+  .tuner-box{
+    background:var(--paper); border-radius:6px; padding:26px 24px;
+    max-width:300px; width:100%; text-align:center; position:relative;
+    border:1px solid var(--line);
+  }
+  .tuner-close{
+    position:absolute; top:10px; right:12px; background:none; border:none;
+    font-size:1.1rem; cursor:pointer; color:var(--wine);
+  }
+  .tuner-title{
+    font-family:'Fraunces', serif; font-weight:700; font-size:1.15rem;
+    color:var(--wine-dark); margin-bottom:14px;
+  }
+  #tuner-permission{ font-size:12.5px; color:#7a6f5f; padding:1rem 0; }
+  #tuner-note{ font-family:'Fraunces', serif; font-size:2.6rem; font-weight:800; line-height:1; color:var(--wine-dark); }
+  #tuner-freq{ font-family:'JetBrains Mono', monospace; font-size:11px; color:#7a6f5f; margin-top:2px; }
+  .tuner-gauge{ position:relative; height:34px; margin:.8rem 0; }
+  .tuner-gauge-line{ position:absolute; left:0; right:0; top:15px; height:2px; background:var(--line); }
+  .tuner-gauge-mid{ position:absolute; left:50%; top:6px; width:2px; height:20px; background:#7a6f5f; }
+  #tuner-cursor{
+    position:absolute; top:2px; width:4px; height:28px; background:var(--gold);
+    border-radius:2px; left:50%; transform:translateX(-50%); transition:left .1s linear;
+  }
+  #tuner-hint{ font-size:11px; color:#7a6f5f; }
+  .tuner-toggle-btn{
+    margin-top:.8rem; width:100%; text-align:center;
+    font-family:'JetBrains Mono', monospace; font-size:0.8rem;
+    background:var(--wine); color:#fffdf8; border:none; border-radius:3px;
+    padding:9px; cursor:pointer;
+  }
+  .tuner-toggle-btn:hover{ background:var(--wine-dark); }
+
+  .autoscroll-bar{
+    display:flex; align-items:center; gap:10px;
+    padding:8px 14px; margin-bottom:8px;
+    background:#fffdf8; border:1px solid var(--line); border-radius:3px;
+    font-family:'JetBrains Mono', monospace; font-size:0.76rem; color:var(--wine);
+  }
+  .autoscroll-btn{
+    background:var(--wine); color:#fffdf8; border:none; border-radius:3px;
+    padding:6px 12px; cursor:pointer; font-family:inherit; font-size:inherit;
+    min-width:80px;
+  }
+  .autoscroll-btn:hover{ background:var(--wine-dark); }
+  .autoscroll-bar input[type=range]{ flex:1; max-width:160px; accent-color:var(--gold); }
+  @media print{ .autoscroll-bar{ display:none !important; } }
 
   .wrap{ max-width:880px; margin:0 auto; padding:36px 20px 80px; }
 
@@ -250,6 +311,7 @@
 <header class="site">
   <h1 class="brand">Canzoni<em>ere</em></h1>
   <p class="tagline">canzoni italiane · accordi · testi</p>
+  <button class="tuner-open-btn" onclick="openTuner()">🎯 Accordatore</button>
 </header>
 
 <div class="wrap">
@@ -296,6 +358,12 @@
       <button id="reset-key">originale</button>
     </div>
 
+    <div class="autoscroll-bar">
+      <button class="autoscroll-btn" id="autoscroll-btn" onclick="toggleAutoscroll()">▶ Scorri</button>
+      <span>Velocità</span>
+      <input type="range" min="1" max="10" step="1" value="2" oninput="setAutoscrollSpeed(this.value)">
+    </div>
+
     <div class="lyrics-block" id="accordi-block">
       <pre class="song-body" id="d-body"></pre>
     </div>
@@ -314,6 +382,25 @@
     </div>
   </div>
 
+</div>
+
+<div id="tuner-lightbox" onclick="closeTuner(event)">
+  <div class="tuner-box" onclick="event.stopPropagation()">
+    <button class="tuner-close" onclick="closeTuner()">✕</button>
+    <div class="tuner-title">Accordatore</div>
+    <div id="tuner-permission">Tocca "Avvia" e consenti l'uso del microfono per accordare la chitarra.</div>
+    <div id="tuner-display" style="display:none;">
+      <div id="tuner-note">—</div>
+      <div id="tuner-freq">— Hz</div>
+      <div class="tuner-gauge">
+        <div class="tuner-gauge-line"></div>
+        <div class="tuner-gauge-mid"></div>
+        <div id="tuner-cursor"></div>
+      </div>
+      <div id="tuner-hint">Suona una corda</div>
+    </div>
+    <button id="tuner-toggle" class="tuner-toggle-btn" onclick="toggleTuner()">Avvia</button>
+  </div>
 </div>
 
 <footer>canzoniere personale — ad uso privato</footer>
@@ -629,6 +716,123 @@ document.querySelectorAll('.nav-tab').forEach(btn => {
 document.getElementById('tab-accordi').addEventListener('click', (e) => { e.preventDefault(); currentView='accordi'; applyView(); history.replaceState(null,'', '?song='+currentSong.id); });
 document.getElementById('tab-testo').addEventListener('click', (e) => { e.preventDefault(); currentView='testo'; applyView(); history.replaceState(null,'', '?song='+currentSong.id+'&view=testo'); });
 document.getElementById('print-link').addEventListener('click', (e) => { e.preventDefault(); window.print(); });
+
+/* ── AUTOSCROLL ── */
+let autoscrollTimer = null, autoscrollSpeed = 2;
+function toggleAutoscroll(){
+  const btn = document.getElementById('autoscroll-btn');
+  if(autoscrollTimer){
+    clearInterval(autoscrollTimer);
+    autoscrollTimer = null;
+    if(btn) btn.textContent = '▶ Scorri';
+  } else {
+    autoscrollTimer = setInterval(() => {
+      window.scrollBy(0, autoscrollSpeed);
+      if((window.innerHeight + window.scrollY) >= document.body.scrollHeight - 2){
+        clearInterval(autoscrollTimer);
+        autoscrollTimer = null;
+        if(btn) btn.textContent = '▶ Scorri';
+      }
+    }, 60);
+    if(btn) btn.textContent = '⏸ Ferma';
+  }
+}
+function setAutoscrollSpeed(v){ autoscrollSpeed = parseFloat(v) || 2; }
+
+/* ── ACCORDATORE ── */
+let tunerCtx = null, tunerStream = null, tunerAnalyser = null, tunerRAF = null;
+const NOTE_NAMES = ['Do','Do♯','Re','Re♯','Mi','Fa','Fa♯','Sol','Sol♯','La','La♯','Si'];
+function openTuner(){ document.getElementById('tuner-lightbox').classList.add('open'); }
+function closeTuner(ev){ document.getElementById('tuner-lightbox').classList.remove('open'); stopTuner(); }
+function toggleTuner(){ if(tunerStream){ stopTuner(); } else { startTuner(); } }
+function startTuner(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    document.getElementById('tuner-permission').textContent = 'Il microfono non è supportato su questo browser.';
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}}).then(stream => {
+    tunerStream = stream;
+    tunerCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = tunerCtx.createMediaStreamSource(stream);
+    tunerAnalyser = tunerCtx.createAnalyser();
+    tunerAnalyser.fftSize = 2048;
+    src.connect(tunerAnalyser);
+    document.getElementById('tuner-permission').style.display = 'none';
+    document.getElementById('tuner-display').style.display = '';
+    document.getElementById('tuner-toggle').textContent = 'Ferma';
+    tunerLoop();
+  }).catch(() => {
+    document.getElementById('tuner-permission').textContent = 'Accesso al microfono negato o non disponibile.';
+  });
+}
+function stopTuner(){
+  if(tunerRAF) cancelAnimationFrame(tunerRAF);
+  tunerRAF = null;
+  if(tunerStream){ tunerStream.getTracks().forEach(t => t.stop()); tunerStream = null; }
+  if(tunerCtx){ tunerCtx.close(); tunerCtx = null; }
+  tunerAnalyser = null;
+  document.getElementById('tuner-toggle').textContent = 'Avvia';
+  document.getElementById('tuner-display').style.display = 'none';
+  document.getElementById('tuner-permission').style.display = '';
+  document.getElementById('tuner-permission').textContent = 'Tocca "Avvia" e consenti l\'uso del microfono per accordare la chitarra.';
+}
+function autoCorrelate(buf, sampleRate){
+  const SIZE = buf.length;
+  let rms = 0;
+  for(let i=0;i<SIZE;i++){ rms += buf[i]*buf[i]; }
+  rms = Math.sqrt(rms/SIZE);
+  if(rms < 0.01) return -1;
+  let r1 = 0, r2 = SIZE-1;
+  const thres = 0.2;
+  for(let i=0;i<SIZE/2;i++){ if(Math.abs(buf[i]) < thres){ r1 = i; break; } }
+  for(let i=1;i<SIZE/2;i++){ if(Math.abs(buf[SIZE-i]) < thres){ r2 = SIZE-i; break; } }
+  const trimmed = buf.slice(r1, r2);
+  const newSize = trimmed.length;
+  const c = new Array(newSize).fill(0);
+  for(let i=0;i<newSize;i++){
+    for(let j=0;j<newSize-i;j++){ c[i] += trimmed[j]*trimmed[j+i]; }
+  }
+  let d = 0; while(c[d] > c[d+1]) d++;
+  let maxval = -1, maxpos = -1;
+  for(let i=d;i<newSize;i++){ if(c[i] > maxval){ maxval = c[i]; maxpos = i; } }
+  let T0 = maxpos;
+  if(T0 <= 0) return -1;
+  const x1 = c[T0-1] || c[T0], x2 = c[T0], x3 = c[T0+1] || c[T0];
+  const a = (x1+x3-2*x2)/2, b = (x3-x1)/2;
+  if(a) T0 = T0 - b/(2*a);
+  return sampleRate / T0;
+}
+function freqToNote(freq){
+  const noteNum = 12*(Math.log(freq/440)/Math.log(2));
+  const rounded = Math.round(noteNum) + 69;
+  const name = NOTE_NAMES[((rounded%12)+12)%12];
+  const octave = Math.floor(rounded/12) - 1;
+  const exactFreq = 440*Math.pow(2,(rounded-69)/12);
+  const cents = Math.floor(1200*Math.log(freq/exactFreq)/Math.log(2));
+  return {name, octave, cents};
+}
+function tunerLoop(){
+  if(!tunerAnalyser) return;
+  const buf = new Float32Array(tunerAnalyser.fftSize);
+  tunerAnalyser.getFloatTimeDomainData(buf);
+  const freq = autoCorrelate(buf, tunerCtx.sampleRate);
+  if(freq !== -1 && freq > 60 && freq < 1200){
+    const n = freqToNote(freq);
+    document.getElementById('tuner-note').textContent = n.name + n.octave;
+    document.getElementById('tuner-freq').textContent = freq.toFixed(1) + ' Hz';
+    const pct = Math.max(-50, Math.min(50, n.cents));
+    const cursor = document.getElementById('tuner-cursor');
+    cursor.style.left = (50+pct) + '%';
+    if(Math.abs(n.cents) < 5){
+      cursor.style.background = '#3F6B3F';
+      document.getElementById('tuner-hint').textContent = 'Accordata ✓';
+    } else {
+      cursor.style.background = 'var(--gold)';
+      document.getElementById('tuner-hint').textContent = n.cents > 0 ? 'Un po\' crescente, allenta la corda' : 'Un po\' calante, tendi la corda';
+    }
+  }
+  tunerRAF = requestAnimationFrame(tunerLoop);
+}
 
 loadData();
 </script>
