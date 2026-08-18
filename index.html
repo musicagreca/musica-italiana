@@ -220,6 +220,15 @@
   .song-info span.linkable{ cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px; }
   .song-info span.linkable:hover{ color:var(--gold); }
 
+  .listen-link{
+    display:inline-block; margin-top:12px;
+    font-family:'JetBrains Mono', monospace; font-size:0.78rem;
+    background:var(--wine); color:#fffdf8; text-decoration:none;
+    border-radius:20px; padding:7px 16px;
+  }
+  .listen-link:hover{ background:var(--wine-dark); }
+  @media print{ .listen-link{ display:none !important; } }
+
   .view-toggle{ display:flex; gap:10px; margin:16px 0 8px; flex-wrap:wrap; }
   .view-toggle a{
     font-family:'JetBrains Mono', monospace; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em;
@@ -342,6 +351,7 @@
         <span><b>Cantante:</b> <span class="linkable" id="d-cantante" data-role="cantante"></span></span>
         <span><b>Anno:</b> <span id="d-anno"></span></span>
       </div>
+      <a href="#" id="d-link" target="_blank" rel="noopener" class="listen-link" style="display:none;">🎧 Ascolta</a>
     </div>
 
     <div class="view-toggle">
@@ -618,6 +628,14 @@ function openSong(song, view){
   document.getElementById('d-autore-musica').textContent = song.autoreMusica || '—';
   document.getElementById('d-cantante').textContent = song.cantante || '—';
   document.getElementById('d-anno').textContent = song.anno || '—';
+
+  const linkEl = document.getElementById('d-link');
+  if(song.link && song.link.trim()){
+    linkEl.href = song.link.trim();
+    linkEl.style.display = 'inline-block';
+  }else{
+    linkEl.style.display = 'none';
+  }
 
   if(song.note && song.note.trim()){
     document.getElementById('d-note').textContent = song.note;
