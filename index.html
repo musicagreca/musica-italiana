@@ -66,6 +66,25 @@
   }
   .tuner-open-btn:hover{ border-color:var(--gold); }
 
+  #chord-lightbox{
+    display:none; position:fixed; inset:0; background:rgba(43,36,32,.72);
+    z-index:999; align-items:center; justify-content:center; padding:16px;
+  }
+  #chord-lightbox.open{ display:flex; }
+
+  .accordi-hint{ font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:#7a6f5f; margin-bottom:16px; }
+  .acc-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(74px,1fr)); gap:8px; }
+  .acc-btn{
+    background:#fffdf8; border:1px solid var(--line); border-radius:4px;
+    padding:10px 4px; text-align:center; cursor:pointer;
+    font-family:'JetBrains Mono', monospace; font-weight:600; font-size:0.86rem; color:var(--wine-dark);
+  }
+  .acc-btn:hover{ border-color:var(--gold); color:var(--wine); }
+
+  .chord-tok{ cursor:pointer; }
+  .chord-tok:hover{ color:var(--gold); text-decoration:underline; }
+
+
   #tuner-lightbox{
     display:none; position:fixed; inset:0; background:rgba(43,36,32,.72);
     z-index:999; align-items:center; justify-content:center; padding:16px;
@@ -331,6 +350,7 @@
       <button class="nav-tab" data-tab="triestine">Canzoni triestine</button>
       <button class="nav-tab" data-tab="autori">Autori</button>
       <button class="nav-tab" data-tab="cantanti">Cantanti</button>
+      <button class="nav-tab" data-tab="accordi">Accordi</button>
     </div>
 
     <div id="breadcrumb-wrap"></div>
@@ -340,6 +360,10 @@
     <div class="song-list" id="song-list"></div>
     <div class="browse-list" id="browse-list" style="display:none;"></div>
     <div class="empty-msg" id="empty-msg" style="display:none;">Nessuna canzone ancora — aggiungila dal pannello admin.</div>
+    <div id="accordi-view" style="display:none;">
+      <p class="accordi-hint">Tocca un accordo per vedere lo schema.</p>
+      <div class="acc-grid" id="acc-grid"></div>
+    </div>
   </div>
 
   <div id="detail">
@@ -414,6 +438,15 @@
   </div>
 </div>
 
+<div id="chord-lightbox" onclick="closeChord(event)">
+  <div class="tuner-box" onclick="event.stopPropagation()">
+    <button class="tuner-close" onclick="closeChord()">✕</button>
+    <div class="tuner-title" id="chord-box-ttl"></div>
+    <img id="chord-box-img" src="" alt="" style="max-width:100%; max-height:60vh; border-radius:6px;">
+    <div id="chord-box-missing" style="display:none; color:#7a6f5f; font-size:12px; padding:1rem; text-align:center;">Schema non disponibile</div>
+  </div>
+</div>
+
 <footer>canzoniere personale — ad uso privato</footer>
 
 <script src="chords.js"></script>
@@ -467,7 +500,16 @@ function setActiveTab(tab){
   currentLetter = null;
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.getElementById('breadcrumb-wrap').innerHTML = '';
-  if(tab === 'tutte' || tab === 'triestine'){
+  document.getElementById('accordi-view').style.display = 'none';
+  if(tab === 'accordi'){
+    document.getElementById('search').style.display = 'none';
+    document.getElementById('alpha-bar').style.display = 'none';
+    document.getElementById('song-list').style.display = 'none';
+    document.getElementById('browse-list').style.display = 'none';
+    document.getElementById('empty-msg').style.display = 'none';
+    document.getElementById('accordi-view').style.display = 'block';
+    renderAccordi();
+  } else if(tab === 'tutte' || tab === 'triestine'){
     document.getElementById('search').style.display = 'block';
     document.getElementById('song-list').style.display = 'flex';
     document.getElementById('browse-list').style.display = 'none';
@@ -479,6 +521,25 @@ function setActiveTab(tab){
     renderBrowse(tab === 'autori' ? 'autore' : 'cantante');
   }
 }
+
+function renderAccordi(){
+  const grid = document.getElementById('acc-grid');
+  grid.innerHTML = CHORD_LIST.map(code =>
+    `<div class="acc-btn" onclick="openChord('${code}')">${chordLabel(code)}</div>`
+  ).join('');
+}
+
+function openChord(code){
+  document.getElementById('chord-box-ttl').textContent = chordLabel(code);
+  const img = document.getElementById('chord-box-img');
+  const missing = document.getElementById('chord-box-missing');
+  img.style.display = '';
+  missing.style.display = 'none';
+  img.onerror = () => { img.style.display = 'none'; missing.style.display = 'block'; };
+  img.src = 'images/accordi/' + code + '.png';
+  document.getElementById('chord-lightbox').classList.add('open');
+}
+function closeChord(ev){ document.getElementById('chord-lightbox').classList.remove('open'); }
 
 function normalizeLetter(str){
   const raw = (str || '').trim();
@@ -680,6 +741,22 @@ function closeSong(){
   document.getElementById('detail').classList.remove('active');
 }
 
+function buildChordLineHTML(line, semitones, targetKey){
+  const re = /(DO|RE|MI|FA|SOL|LA|SI)(#|b)?([^\/\s]*)(?:\/(DO|RE|MI|FA|SOL|LA|SI)(#|b)?)?/g;
+  let html = '', lastIndex = 0, m;
+  while((m = re.exec(line)) !== null){
+    html += escapeHtml(line.slice(lastIndex, m.index));
+    const transposed = transposeChord(m[0], semitones, targetKey);
+    const code = chordToImageCode(transposed);
+    html += code
+      ? `<span class="chord-tok" onclick="openChord('${code}')">${escapeHtml(transposed)}</span>`
+      : escapeHtml(transposed);
+    lastIndex = re.lastIndex;
+  }
+  html += escapeHtml(line.slice(lastIndex));
+  return html;
+}
+
 function renderBody(){
   if(!currentSong) return;
   const lines = (currentSong.testo || '').split('\n');
@@ -692,7 +769,7 @@ function renderBody(){
     const div = document.createElement('div');
     if (isLikelyChordLine(line)) {
       div.className = 'chordline';
-      div.textContent = transposeChordLine(line, currentSemitones, targetKey);
+      div.innerHTML = buildChordLineHTML(line, currentSemitones, targetKey);
     } else {
       div.textContent = line;
     }
