@@ -66,6 +66,11 @@
 <h1>🎵 Trova la tonalità</h1>
 <p class="sub">Premi "Ascolta" e canta o suona: il sistema rileva le note e stima man mano la tonalità più probabile della canzone.</p>
 
+<div style="display:flex;gap:8px;margin-bottom:14px">
+  <button id="modeKey" style="padding:8px 16px;font-size:.85rem;background:var(--accent)">Tonalità canzone</button>
+  <button id="modeNote" style="padding:8px 16px;font-size:.85rem;background:var(--line);color:var(--ink)">Solo nota del momento</button>
+</div>
+
 <div class="card">
   <button id="btnStart">🎤 Ascolta</button>
   <div class="note-now" id="noteNow">—</div>
@@ -74,13 +79,13 @@
 
   <hr>
 
-  <div style="font-size:.8rem;color:var(--sub);letter-spacing:.06em;text-transform:uppercase">Tonalità stimata</div>
-  <div class="key-result" id="keyResult">—</div>
-  <div class="key-conf" id="keyConf">Canta qualche frase per iniziare la stima</div>
-
-  <div class="bars" id="bars"></div>
-
-  <button class="reset" id="btnReset">↺ azzera e ricomincia</button>
+  <div id="keySection">
+    <div style="font-size:.8rem;color:var(--sub);letter-spacing:.06em;text-transform:uppercase">Tonalità stimata</div>
+    <div class="key-result" id="keyResult">—</div>
+    <div class="key-conf" id="keyConf">Canta qualche frase per iniziare la stima</div>
+    <div class="bars" id="bars"></div>
+    <button class="reset" id="btnReset">↺ azzera e ricomincia</button>
+  </div>
 </div>
 
 <div class="hint">
@@ -101,6 +106,9 @@ let running = false;
 let firstNoteIdx = null, lastNoteIdx = null;
 let stableBuf = []; // ultime rilevazioni, per il filtro di stabilità
 const STABLE_N = 4; // quante rilevazioni consecutive servono per confermare una nota
+let smoothScores = null; // punteggi delle 24 tonalità (12 magg + 12 min), smorzati nel tempo
+let currentBest = null; // tonalità attualmente mostrata (cambia solo se un'altra la supera chiaramente)
+let mode = 'key'; // 'key' = tonalità canzone, 'note' = solo nota del momento
 
 /* istogramma pesato delle classi di altezza (12 note), accumulato nel tempo */
 let pitchHist = new Array(12).fill(0);
@@ -182,28 +190,45 @@ function updateKeyEstimate(){
   if(firstNoteIdx!==null) weighted[firstNoteIdx] += total*0.15;
   if(lastNoteIdx!==null) weighted[lastNoteIdx] += total*0.15;
 
-  let best = {score:-Infinity, name:'', type:''};
-  let second = {score:-Infinity};
-
+  // calcola il punteggio "grezzo" per ciascuna delle 24 tonalità (12 maggiori + 12 minori)
+  const rawScores = []; // {score, name, type, idxRoot}
   for(let root=0; root<12; root++){
     for(const [profile,type] of [[MAJOR_PROFILE,'maggiore'],[MINOR_PROFILE,'minore']]){
-      // ruota il profilo sulla tonica "root" e calcola la correlazione con l'istogramma osservato
       let score = 0;
       for(let i=0;i<12;i++){
         const p = profile[(i-root+12)%12];
         score += p * weighted[i];
       }
-      if(score > best.score){ second = {...best}; best = {score, name:NOTE_NAMES[root], type, idxRoot:root}; }
-      else if(score > second.score){ second = {score}; }
+      rawScores.push({score, name:NOTE_NAMES[root], type, idxRoot:root});
     }
   }
-  const margin = second.score>0 ? (best.score-second.score)/best.score : 1;
-  const confidence = Math.max(0, Math.min(1, margin*3));
 
-  keyResultEl.textContent = best.name + ' ' + (best.type==='minore' ? 'minore' : 'maggiore');
+  // normalizza (0-1) e smorza nel tempo con una media mobile, per evitare che il risultato "salti"
+  const maxRaw = Math.max(...rawScores.map(s=>s.score));
+  const norm = rawScores.map(s=>({...s, n: maxRaw>0 ? s.score/maxRaw : 0}));
+  if(!smoothScores){
+    smoothScores = norm;
+  } else {
+    smoothScores = smoothScores.map((s,i)=>({...s, n: s.n*0.85 + norm[i].n*0.15}));
+  }
+
+  const sorted = smoothScores.slice().sort((a,b)=>b.n-a.n);
+  const best = sorted[0], second = sorted[1];
+
+  // cambia la tonalità mostrata solo se la nuova è chiaramente più forte (evita di "saltellare" tra due vicine)
+  if(!currentBest || best.n > (smoothScores.find(s=>s.name===currentBest.name && s.type===currentBest.type)?.n||0) + 0.06){
+    currentBest = best;
+  }
+
+  const margin = second.n>0 ? (best.n-second.n) : 1;
+  const confidence = Math.max(0, Math.min(1, margin*4));
+
+  const shown = currentBest;
+  keyResultEl.textContent = shown.name + ' ' + (shown.type==='minore' ? 'minore' : 'maggiore');
   const confPct = Math.round(confidence*100);
   let confLabel = confPct>60 ? 'stima solida' : confPct>30 ? 'stima probabile' : 'stima incerta, continua a cantare';
-  keyConfEl.textContent = confLabel + ' — ' + Math.round(total) + ' note rilevate';
+  keyConfEl.textContent = confLabel + ' — ' + Math.round(total) + ' note rilevate' +
+    (second.n > best.n*0.85 ? ' (attenzione: vicina a '+second.name+' '+second.type+')' : '');
 
   // aggiorna le barre dell'istogramma
   const maxH = Math.max(...pitchHist, 1);
@@ -211,7 +236,7 @@ function updateKeyEstimate(){
     const bar = document.getElementById('bar'+i);
     const h = Math.max(4, (v/maxH)*66);
     bar.style.height = h+'px';
-    bar.classList.toggle('top', i===best.idxRoot);
+    bar.classList.toggle('top', i===shown.idxRoot);
   });
 }
 
@@ -234,7 +259,7 @@ function loop(){
       stableBuf.push(n.idx);
       if(stableBuf.length > STABLE_N) stableBuf.shift();
       const allSame = stableBuf.length===STABLE_N && stableBuf.every(v=>v===stableBuf[0]);
-      if(allSame){
+      if(allSame && mode==='key'){
         pitchHist[n.idx] += 1;
         if(firstNoteIdx===null) firstNoteIdx = n.idx;
         lastNoteIdx = n.idx;
@@ -281,9 +306,28 @@ btnStart.addEventListener('click', ()=>{
   if(running) stop(); else start();
 });
 
+const modeKeyBtn = document.getElementById('modeKey');
+const modeNoteBtn = document.getElementById('modeNote');
+const keySection = document.getElementById('keySection');
+
+function setMode(m){
+  mode = m;
+  if(m==='key'){
+    modeKeyBtn.style.background = 'var(--accent)'; modeKeyBtn.style.color = '#fff';
+    modeNoteBtn.style.background = 'var(--line)'; modeNoteBtn.style.color = 'var(--ink)';
+    keySection.style.display = 'block';
+  } else {
+    modeNoteBtn.style.background = 'var(--accent)'; modeNoteBtn.style.color = '#fff';
+    modeKeyBtn.style.background = 'var(--line)'; modeKeyBtn.style.color = 'var(--ink)';
+    keySection.style.display = 'none';
+  }
+}
+modeKeyBtn.addEventListener('click', ()=>setMode('key'));
+modeNoteBtn.addEventListener('click', ()=>setMode('note'));
+
 btnReset.addEventListener('click', ()=>{
   pitchHist = new Array(12).fill(0);
-  firstNoteIdx = null; lastNoteIdx = null; stableBuf = [];
+  firstNoteIdx = null; lastNoteIdx = null; stableBuf = []; smoothScores = null; currentBest = null;
   keyResultEl.textContent = '—';
   keyConfEl.textContent = 'Canta qualche frase per iniziare la stima';
   document.querySelectorAll('.bars .bar').forEach(b=>{ b.style.height='4px'; b.classList.remove('top'); });
