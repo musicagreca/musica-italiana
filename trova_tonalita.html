@@ -98,6 +98,9 @@ const MINOR_PROFILE = [6.33,2.68,3.52,5.38,2.60,3.53,2.54,4.75,3.98,2.69,3.34,3.
 
 let audioCtx, analyser, micStream, srcNode, rafId;
 let running = false;
+let firstNoteIdx = null, lastNoteIdx = null;
+let stableBuf = []; // ultime rilevazioni, per il filtro di stabilità
+const STABLE_N = 4; // quante rilevazioni consecutive servono per confermare una nota
 
 /* istogramma pesato delle classi di altezza (12 note), accumulato nel tempo */
 let pitchHist = new Array(12).fill(0);
@@ -174,6 +177,11 @@ function updateKeyEstimate(){
     keyConfEl.textContent = 'Canta qualche frase per iniziare la stima';
     return;
   }
+  // istogramma "pesato": prima e ultima nota cantata contano di più (spesso sono la tonica)
+  const weighted = pitchHist.slice();
+  if(firstNoteIdx!==null) weighted[firstNoteIdx] += total*0.15;
+  if(lastNoteIdx!==null) weighted[lastNoteIdx] += total*0.15;
+
   let best = {score:-Infinity, name:'', type:''};
   let second = {score:-Infinity};
 
@@ -183,7 +191,7 @@ function updateKeyEstimate(){
       let score = 0;
       for(let i=0;i<12;i++){
         const p = profile[(i-root+12)%12];
-        score += p * pitchHist[i];
+        score += p * weighted[i];
       }
       if(score > best.score){ second = {...best}; best = {score, name:NOTE_NAMES[root], type, idxRoot:root}; }
       else if(score > second.score){ second = {score}; }
@@ -222,12 +230,20 @@ function loop(){
       centsFillEl.style.left = (50 + centsClamped/50*45) + '%';
       status.textContent = (Math.abs(n.cents)<10) ? '✓ intonazione precisa' : (n.cents>0? '▲ un po\' crescente' : '▼ un po\' calante');
 
-      // peso maggiore alle note intonate con più decisione (rms indirettamente già filtrato)
-      pitchHist[n.idx] += 1;
-      updateKeyEstimate();
+      // filtro di stabilità: conta la nota solo se confermata per STABLE_N rilevazioni consecutive
+      stableBuf.push(n.idx);
+      if(stableBuf.length > STABLE_N) stableBuf.shift();
+      const allSame = stableBuf.length===STABLE_N && stableBuf.every(v=>v===stableBuf[0]);
+      if(allSame){
+        pitchHist[n.idx] += 1;
+        if(firstNoteIdx===null) firstNoteIdx = n.idx;
+        lastNoteIdx = n.idx;
+        updateKeyEstimate();
+      }
     }
   } else {
     status.textContent = 'in ascolto…';
+    stableBuf = [];
   }
   rafId = requestAnimationFrame(loop);
 }
@@ -267,6 +283,7 @@ btnStart.addEventListener('click', ()=>{
 
 btnReset.addEventListener('click', ()=>{
   pitchHist = new Array(12).fill(0);
+  firstNoteIdx = null; lastNoteIdx = null; stableBuf = [];
   keyResultEl.textContent = '—';
   keyConfEl.textContent = 'Canta qualche frase per iniziare la stima';
   document.querySelectorAll('.bars .bar').forEach(b=>{ b.style.height='4px'; b.classList.remove('top'); });
