@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Trova la tonalità — Musica Greca</title>
+<style>
+  :root{
+    --bg:#faf7f2; --card:#fff; --ink:#2b2420; --sub:#7a6f63;
+    --accent:#8a5a3c; --accent2:#c99a5b; --line:#e6ddd0; --good:#4a7a4a; --bad:#b5482f;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:'Noto Sans', Arial, sans-serif; background:var(--bg); color:var(--ink);
+    display:flex; flex-direction:column; align-items:center; padding:20px 14px 60px;
+  }
+  h1{
+    font-family:'Cormorant', Georgia, serif; font-size:1.7rem; margin:6px 0 2px; text-align:center;
+  }
+  .sub{ color:var(--sub); font-size:.92rem; text-align:center; max-width:440px; margin-bottom:18px; }
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:16px; padding:20px;
+    width:100%; max-width:420px; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,.04);
+  }
+  button{
+    font-family:inherit; font-size:1rem; padding:12px 22px; border-radius:999px; border:none;
+    background:var(--accent); color:#fff; cursor:pointer; font-weight:600; letter-spacing:.02em;
+  }
+  button:active{ transform:scale(.97); }
+  button.stop{ background:var(--bad); }
+  button:disabled{ opacity:.5; cursor:default; }
+  .note-now{
+    font-family:'Cormorant', Georgia, serif; font-size:3.4rem; font-weight:700; margin:14px 0 2px;
+    color:var(--accent); min-height:60px;
+  }
+  .note-now .oct{ font-size:1.3rem; color:var(--sub); }
+  .cents-bar{
+    width:220px; height:8px; background:var(--line); border-radius:6px; margin:0 auto 4px;
+    position:relative; overflow:hidden;
+  }
+  .cents-fill{
+    position:absolute; top:0; bottom:0; left:50%; width:4px; background:var(--accent2);
+    border-radius:4px; transform:translateX(-50%);
+  }
+  .status{ font-size:.85rem; color:var(--sub); min-height:18px; margin-bottom:10px; }
+  hr{ border:none; border-top:1px solid var(--line); margin:18px 0; }
+  .key-result{
+    font-family:'Cormorant', Georgia, serif; font-size:2rem; font-weight:700; color:var(--ink);
+    min-height:36px;
+  }
+  .key-conf{ font-size:.85rem; color:var(--sub); margin-bottom:10px; }
+  .bars{ display:flex; align-items:flex-end; gap:3px; height:70px; margin:10px 0 4px; justify-content:center; }
+  .bars .bar{ width:12px; background:var(--line); border-radius:3px 3px 0 0; position:relative; transition:height .3s; }
+  .bars .bar.top{ background:var(--accent2); }
+  .bars .lbl{
+    position:absolute; bottom:-18px; left:0; right:0; text-align:center; font-size:.6rem; color:var(--sub);
+  }
+  .reset{
+    background:none; color:var(--sub); text-decoration:underline; padding:6px 10px; font-weight:400; font-size:.85rem;
+  }
+  .hint{ font-size:.78rem; color:var(--sub); margin-top:14px; line-height:1.5; }
+</style>
+</head>
+<body>
+
+<h1>🎵 Trova la tonalità</h1>
+<p class="sub">Premi "Ascolta" e canta o suona: il sistema rileva le note e stima man mano la tonalità più probabile della canzone.</p>
+
+<div class="card">
+  <button id="btnStart">🎤 Ascolta</button>
+  <div class="note-now" id="noteNow">—</div>
+  <div class="cents-bar"><div class="cents-fill" id="centsFill"></div></div>
+  <div class="status" id="status">Premi "Ascolta" per iniziare</div>
+
+  <hr>
+
+  <div style="font-size:.8rem;color:var(--sub);letter-spacing:.06em;text-transform:uppercase">Tonalità stimata</div>
+  <div class="key-result" id="keyResult">—</div>
+  <div class="key-conf" id="keyConf">Canta qualche frase per iniziare la stima</div>
+
+  <div class="bars" id="bars"></div>
+
+  <button class="reset" id="btnReset">↺ azzera e ricomincia</button>
+</div>
+
+<div class="hint">
+  Consiglio: canta la stessa canzone per almeno 20-30 secondi, includendo il ritornello, per una stima più precisa. Note isolate o rumore di fondo possono confondere la stima nei primi secondi.
+</div>
+
+<script>
+/* ─── Nomi note in italiano (solfeggio), stesso stile del resto del sito ─── */
+const NOTE_NAMES = ['DO','DO#','RE','RE#','MI','FA','FA#','SOL','SOL#','LA','LA#','SI'];
+
+/* ─── Profili di tonalità (Krumhansl-Schmuckler, pesi classici) ───
+   Indicano quanto ogni grado della scala "appartiene" a una tonalità maggiore/minore. */
+const MAJOR_PROFILE = [6.35,2.23,3.48,2.33,4.38,4.09,2.52,5.19,2.39,3.66,2.29,2.88];
+const MINOR_PROFILE = [6.33,2.68,3.52,5.38,2.60,3.53,2.54,4.75,3.98,2.69,3.34,3.17];
+
+let audioCtx, analyser, micStream, srcNode, rafId;
+let running = false;
+
+/* istogramma pesato delle classi di altezza (12 note), accumulato nel tempo */
+let pitchHist = new Array(12).fill(0);
+
+const noteNowEl = document.getElementById('noteNow');
+const centsFillEl = document.getElementById('centsFill');
+const statusEl = document.getElementById('status');
+const keyResultEl = document.getElementById('keyResult');
+const keyConfEl = document.getElementById('keyConf');
+const barsEl = document.getElementById('bars');
+const btnStart = document.getElementById('btnStart');
+const btnReset = document.getElementById('btnReset');
+
+/* costruisce le 12 barre dell'istogramma */
+NOTE_NAMES.forEach((n,i)=>{
+  const b = document.createElement('div');
+  b.className = 'bar';
+  b.id = 'bar'+i;
+  b.style.height = '4px';
+  const l = document.createElement('div');
+  l.className = 'lbl';
+  l.textContent = n.replace('#','♯');
+  b.appendChild(l);
+  barsEl.appendChild(b);
+});
+
+function freqToNote(freq){
+  if(!freq || freq<=0) return null;
+  const midi = 69 + 12*Math.log2(freq/440);
+  const rounded = Math.round(midi);
+  const cents = Math.round((midi-rounded)*100);
+  const noteIdx = ((rounded%12)+12)%12;
+  const octave = Math.floor(rounded/12)-1;
+  return {name:NOTE_NAMES[noteIdx], idx:noteIdx, octave, cents, midi};
+}
+
+/* Autocorrelazione per la rilevazione dell'altezza (pitch detection) */
+function autoCorrelate(buf, sampleRate){
+  const SIZE = buf.length;
+  let rms = 0;
+  for(let i=0;i<SIZE;i++) rms += buf[i]*buf[i];
+  rms = Math.sqrt(rms/SIZE);
+  if(rms < 0.01) return -1; // troppo silenzio
+
+  let r1=0, r2=SIZE-1, thres=0.2;
+  for(let i=0;i<SIZE/2;i++){ if(Math.abs(buf[i])<thres){ r1=i; break; } }
+  for(let i=1;i<SIZE/2;i++){ if(Math.abs(buf[SIZE-i])<thres){ r2=SIZE-i; break; } }
+  const buf2 = buf.slice(r1,r2);
+  const SIZE2 = buf2.length;
+
+  const c = new Array(SIZE2).fill(0);
+  for(let i=0;i<SIZE2;i++)
+    for(let j=0;j<SIZE2-i;j++)
+      c[i] += buf2[j]*buf2[j+i];
+
+  let d=0; while(c[d]>c[d+1]) d++;
+  let maxval=-1, maxpos=-1;
+  for(let i=d;i<SIZE2;i++){ if(c[i]>maxval){ maxval=c[i]; maxpos=i; } }
+  let T0 = maxpos;
+
+  if(T0<=0) return -1;
+  // interpolazione parabolica per maggior precisione
+  const x1=c[T0-1]||c[T0], x2=c[T0], x3=c[T0+1]||c[T0];
+  const a=(x1+x3-2*x2)/2, b=(x3-x1)/2;
+  if(a) T0 = T0 - b/(2*a);
+
+  return sampleRate/T0;
+}
+
+function updateKeyEstimate(){
+  const total = pitchHist.reduce((a,b)=>a+b,0);
+  if(total < 3){
+    keyResultEl.textContent = '—';
+    keyConfEl.textContent = 'Canta qualche frase per iniziare la stima';
+    return;
+  }
+  let best = {score:-Infinity, name:'', type:''};
+  let second = {score:-Infinity};
+
+  for(let root=0; root<12; root++){
+    for(const [profile,type] of [[MAJOR_PROFILE,'maggiore'],[MINOR_PROFILE,'minore']]){
+      // ruota il profilo sulla tonica "root" e calcola la correlazione con l'istogramma osservato
+      let score = 0;
+      for(let i=0;i<12;i++){
+        const p = profile[(i-root+12)%12];
+        score += p * pitchHist[i];
+      }
+      if(score > best.score){ second = {...best}; best = {score, name:NOTE_NAMES[root], type, idxRoot:root}; }
+      else if(score > second.score){ second = {score}; }
+    }
+  }
+  const margin = second.score>0 ? (best.score-second.score)/best.score : 1;
+  const confidence = Math.max(0, Math.min(1, margin*3));
+
+  keyResultEl.textContent = best.name + ' ' + (best.type==='minore' ? 'minore' : 'maggiore');
+  const confPct = Math.round(confidence*100);
+  let confLabel = confPct>60 ? 'stima solida' : confPct>30 ? 'stima probabile' : 'stima incerta, continua a cantare';
+  keyConfEl.textContent = confLabel + ' — ' + Math.round(total) + ' note rilevate';
+
+  // aggiorna le barre dell'istogramma
+  const maxH = Math.max(...pitchHist, 1);
+  pitchHist.forEach((v,i)=>{
+    const bar = document.getElementById('bar'+i);
+    const h = Math.max(4, (v/maxH)*66);
+    bar.style.height = h+'px';
+    bar.classList.toggle('top', i===best.idxRoot);
+  });
+}
+
+function loop(){
+  if(!running) return;
+  const buf = new Float32Array(analyser.fftSize);
+  analyser.getFloatTimeDomainData(buf);
+  const freq = autoCorrelate(buf, audioCtx.sampleRate);
+
+  if(freq>0 && freq<1200 && freq>60){
+    const n = freqToNote(freq);
+    if(n){
+      noteNowEl.innerHTML = n.name.replace('#','<span style="font-size:.6em">♯</span>') +
+        '<span class="oct">'+n.octave+'</span>';
+      const centsClamped = Math.max(-50, Math.min(50, n.cents));
+      centsFillEl.style.left = (50 + centsClamped/50*45) + '%';
+      status.textContent = (Math.abs(n.cents)<10) ? '✓ intonazione precisa' : (n.cents>0? '▲ un po\' crescente' : '▼ un po\' calante');
+
+      // peso maggiore alle note intonate con più decisione (rms indirettamente già filtrato)
+      pitchHist[n.idx] += 1;
+      updateKeyEstimate();
+    }
+  } else {
+    status.textContent = 'in ascolto…';
+  }
+  rafId = requestAnimationFrame(loop);
+}
+
+async function start(){
+  try{
+    micStream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
+  }catch(e){
+    statusEl.textContent = 'Microfono non disponibile: ' + e.message;
+    return;
+  }
+  audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 2048;
+  srcNode = audioCtx.createMediaStreamSource(micStream);
+  srcNode.connect(analyser);
+
+  running = true;
+  btnStart.textContent = '⏸ Ferma ascolto';
+  btnStart.classList.add('stop');
+  loop();
+}
+
+function stop(){
+  running = false;
+  if(rafId) cancelAnimationFrame(rafId);
+  if(micStream) micStream.getTracks().forEach(t=>t.stop());
+  if(audioCtx) audioCtx.close();
+  btnStart.textContent = '🎤 Ascolta';
+  btnStart.classList.remove('stop');
+  statusEl.textContent = 'Ascolto fermato';
+}
+
+btnStart.addEventListener('click', ()=>{
+  if(running) stop(); else start();
+});
+
+btnReset.addEventListener('click', ()=>{
+  pitchHist = new Array(12).fill(0);
+  keyResultEl.textContent = '—';
+  keyConfEl.textContent = 'Canta qualche frase per iniziare la stima';
+  document.querySelectorAll('.bars .bar').forEach(b=>{ b.style.height='4px'; b.classList.remove('top'); });
+});
+</script>
+</body>
+</html>
