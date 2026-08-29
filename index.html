@@ -183,6 +183,27 @@
   .alpha-btn.disabled{ opacity:0.3; cursor:default; pointer-events:none; }
   .alpha-btn.all{ font-family:'Source Sans 3', sans-serif; font-weight:600; padding:5px 12px; }
 
+  .list-count{
+    font-family:'JetBrains Mono', monospace; font-size:0.78rem;
+    color:#8a7f6f; margin-bottom:14px;
+  }
+  .discreet-link{
+    text-align:right; padding:14px 4px 4px;
+    font-family:'JetBrains Mono', monospace; font-size:0.72rem;
+    color:#b8ac97; cursor:pointer;
+  }
+  .discreet-link:hover{ color:#8a7f6f; }
+
+  .folder-toggle{
+    margin-top:18px; padding:10px 14px;
+    font-family:'JetBrains Mono', monospace; font-size:0.8rem;
+    color:#8a7f6f; cursor:pointer;
+    border:1px dashed var(--line); border-radius:4px;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .folder-toggle:hover{ border-color:var(--gold); color:var(--wine); }
+  #spinte-content{ margin-top:14px; padding-top:14px; border-top:1px solid var(--line); }
+
   .song-list{ display:flex; flex-direction:column; }
   .song-row{
     display:flex; justify-content:space-between; align-items:baseline;
@@ -357,9 +378,21 @@
 
     <input type="text" id="search" placeholder="Cerca per titolo, autore o cantante…">
     <div class="alpha-bar" id="alpha-bar"></div>
+    <div class="list-count" id="list-count"></div>
     <div class="song-list" id="song-list"></div>
     <div class="browse-list" id="browse-list" style="display:none;"></div>
     <div class="empty-msg" id="empty-msg" style="display:none;">Nessuna canzone ancora — aggiungila dal pannello admin.</div>
+
+    <div id="spinte-folder" style="display:none;">
+      <div class="folder-toggle" id="folder-toggle" onclick="toggleSpinteFolder()">
+        <span id="folder-icon">📁</span> <span id="folder-label">altro</span>
+      </div>
+      <div id="spinte-content" style="display:none;">
+        <div class="alpha-bar" id="spinte-alpha-bar"></div>
+        <div class="list-count" id="spinte-count"></div>
+        <div class="song-list" id="spinte-list"></div>
+      </div>
+    </div>
     <div id="accordi-view" style="display:none;">
       <p class="accordi-hint">Tocca un accordo per vedere lo schema.</p>
       <div class="acc-grid" id="acc-grid"></div>
@@ -454,42 +487,11 @@
 let SONGS = [];
 let currentSong = null;
 let currentSemitones = 0;
-
-/* ── PREFERENZE PER CANZONE (tonalità e velocità di scorrimento), salvate nel browser ── */
-function getSongSemi(id){
-  if(!id) return 0;
-  const v = parseInt(localStorage.getItem('semi:'+id), 10);
-  return isNaN(v) ? 0 : Math.max(-11, Math.min(11, v));
-}
-function saveSongSemi(id, val){
-  if(!id) return;
-  try{ localStorage.setItem('semi:'+id, String(val)); }catch(e){}
-}
-function getSongSpeed(id){
-  if(!id) return 2;
-  const v = parseFloat(localStorage.getItem('speed:'+id));
-  return isNaN(v) ? 2 : v;
-}
-function saveSongSpeed(id, val){
-  if(!id) return;
-  try{ localStorage.setItem('speed:'+id, String(val)); }catch(e){}
-}
-
-/* ── WAKE LOCK: tiene lo schermo acceso mentre si guarda una canzone ── */
-let wakeLock = null;
-async function requestWakeLock(){
-  if(!('wakeLock' in navigator)) return;
-  try{ wakeLock = await navigator.wakeLock.request('screen'); }catch(e){}
-}
-function releaseWakeLock(){
-  if(wakeLock){ wakeLock.release().catch(()=>{}); wakeLock = null; }
-}
-document.addEventListener('visibilitychange', ()=>{
-  if(currentSong && document.visibilityState==='visible') requestWakeLock();
-});
 let currentView = 'accordi';
 let currentTab = 'tutte';
 let currentLetter = null;
+let spinteLetter = null;
+let spinteOpen = false;
 
 function getParams(){ return new URLSearchParams(window.location.search); }
 
@@ -523,7 +525,7 @@ function route(){
 }
 
 function baseSongs(){
-  if(currentTab === 'triestine') return SONGS.filter(s => s.triestina);
+  if(currentTab === 'triestine') return SONGS.filter(s => s.triestina && !s.spinta);
   if(currentTab === 'tutte') return SONGS.filter(s => !s.triestina);
   return SONGS;
 }
@@ -531,9 +533,12 @@ function baseSongs(){
 function setActiveTab(tab){
   currentTab = tab;
   currentLetter = null;
+  spinteOpen = false;
+  spinteLetter = null;
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.getElementById('breadcrumb-wrap').innerHTML = '';
   document.getElementById('accordi-view').style.display = 'none';
+  document.getElementById('list-count').style.display = (tab === 'tutte' || tab === 'triestine') ? 'block' : 'none';
   if(tab === 'accordi'){
     document.getElementById('search').style.display = 'none';
     document.getElementById('alpha-bar').style.display = 'none';
@@ -581,23 +586,29 @@ function normalizeLetter(str){
   return /[A-Z]/.test(c) ? c : '#';
 }
 
-function renderAlphaBar(keys){
+function renderAlphaBar(keys, opts){
+  opts = opts || {};
+  const barId = opts.barId || 'alpha-bar';
+  const getLetter = () => opts.letterState ? opts.letterState.value : currentLetter;
+  const setLetter = (v) => { if(opts.letterState) opts.letterState.value = v; else currentLetter = v; };
+  const onChange = opts.onChange || refreshCurrentView;
+
   const present = new Set(keys.map(normalizeLetter).filter(Boolean));
-  const bar = document.getElementById('alpha-bar');
+  const bar = document.getElementById(barId);
   bar.innerHTML = '';
 
   const allBtn = document.createElement('button');
-  allBtn.className = 'alpha-btn all' + (currentLetter === null ? ' active' : '');
+  allBtn.className = 'alpha-btn all' + (getLetter() === null ? ' active' : '');
   allBtn.textContent = 'Tutti';
-  allBtn.addEventListener('click', () => { currentLetter = null; refreshCurrentView(); });
+  allBtn.addEventListener('click', () => { setLetter(null); onChange(); });
   bar.appendChild(allBtn);
 
   ['#', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')].forEach(letter => {
     const has = present.has(letter);
     const btn = document.createElement('button');
-    btn.className = 'alpha-btn' + (currentLetter === letter ? ' active' : '') + (has ? '' : ' disabled');
+    btn.className = 'alpha-btn' + (getLetter() === letter ? ' active' : '') + (has ? '' : ' disabled');
     btn.textContent = letter;
-    if(has) btn.addEventListener('click', () => { currentLetter = letter; refreshCurrentView(); });
+    if(has) btn.addEventListener('click', () => { setLetter(letter); onChange(); });
     bar.appendChild(btn);
   });
 }
@@ -688,12 +699,46 @@ function renderList(filter){
   renderSongRows(filtered);
 }
 
+function toggleSpinteFolder(){
+  spinteOpen = !spinteOpen;
+  document.getElementById('spinte-content').style.display = spinteOpen ? 'block' : 'none';
+  document.getElementById('folder-icon').textContent = spinteOpen ? '📂' : '📁';
+  if(spinteOpen) renderSpinteList('');
+}
+
+function renderSpinteList(filter){
+  const f = (filter || '').toLowerCase();
+  const all = SONGS.filter(s => s.triestina && s.spinta);
+  const bySearch = all.filter(s => !f || (s.titolo||'').toLowerCase().includes(f));
+  renderAlphaBar(bySearch.map(s => s.titolo), {
+    barId: 'spinte-alpha-bar',
+    letterState: { get value(){ return spinteLetter; }, set value(v){ spinteLetter = v; } },
+    onChange: () => renderSpinteList(filter)
+  });
+  const filtered = (spinteLetter ? bySearch.filter(s => normalizeLetter(s.titolo) === spinteLetter) : bySearch)
+    .sort((a,b) => (a.titolo||'').localeCompare(b.titolo||'', 'it'));
+
+  document.getElementById('spinte-count').textContent = filtered.length === 1 ? '1 canzone' : filtered.length + ' canzoni';
+  const listEl = document.getElementById('spinte-list');
+  listEl.innerHTML = '';
+  filtered.forEach(song => {
+    const row = document.createElement('div');
+    row.className = 'song-row';
+    row.innerHTML = `<span class="song-title">${escapeHtml(song.titolo||'Senza titolo')}</span>
+      <span class="song-meta">${escapeHtml(song.cantante||'')}${song.anno ? ' · ' + song.anno : ''}</span>`;
+    row.addEventListener('click', () => navigateTo({song: song.id}));
+    listEl.appendChild(row);
+  });
+}
+
 function renderSongRows(list, headingName){
   const listEl = document.getElementById('song-list');
   const emptyEl = document.getElementById('empty-msg');
+  const countEl = document.getElementById('list-count');
   listEl.innerHTML = '';
   emptyEl.style.display = list.length ? 'none' : 'block';
   emptyEl.textContent = 'Nessuna canzone trovata.';
+  countEl.textContent = list.length === 1 ? '1 canzone' : list.length + ' canzoni';
 
   list.forEach(song => {
     const row = document.createElement('div');
@@ -703,6 +748,14 @@ function renderSongRows(list, headingName){
     row.addEventListener('click', () => navigateTo({song: song.id}));
     listEl.appendChild(row);
   });
+
+  const folderEl = document.getElementById('spinte-folder');
+  if(currentTab === 'triestine' && SONGS.some(s => s.triestina && s.spinta)){
+    folderEl.style.display = 'block';
+  } else {
+    folderEl.style.display = 'none';
+    document.getElementById('spinte-content').style.display = 'none';
+  }
 }
 
 function escapeHtml(str){
@@ -719,9 +772,7 @@ function navigateTo(params){
 
 function openSong(song, view){
   currentSong = song;
-  currentSemitones = getSongSemi(song.id);
-  autoscrollSpeed = getSongSpeed(song.id);
-  requestWakeLock();
+  currentSemitones = 0;
   currentView = view === 'testo' ? 'testo' : 'accordi';
   document.getElementById('list-view').classList.add('hidden');
   document.getElementById('detail').classList.add('active');
@@ -774,8 +825,6 @@ function applyView(){
 function closeSong(){
   document.getElementById('list-view').classList.remove('hidden');
   document.getElementById('detail').classList.remove('active');
-  currentSong = null;
-  releaseWakeLock();
 }
 
 function buildChordLineHTML(line, semitones, targetKey){
@@ -844,9 +893,9 @@ function shiftKeyName(key, semitones){
 
 document.getElementById('back-btn').addEventListener('click', () => navigateTo({}));
 document.getElementById('search').addEventListener('input', e => renderList(e.target.value));
-document.getElementById('key-up').addEventListener('click', () => { currentSemitones++; saveSongSemi(currentSong.id, currentSemitones); renderBody(); });
-document.getElementById('key-down').addEventListener('click', () => { currentSemitones--; saveSongSemi(currentSong.id, currentSemitones); renderBody(); });
-document.getElementById('reset-key').addEventListener('click', () => { currentSemitones = 0; saveSongSemi(currentSong.id, currentSemitones); renderBody(); });
+document.getElementById('key-up').addEventListener('click', () => { currentSemitones++; renderBody(); });
+document.getElementById('key-down').addEventListener('click', () => { currentSemitones--; renderBody(); });
+document.getElementById('reset-key').addEventListener('click', () => { currentSemitones = 0; renderBody(); });
 
 document.querySelectorAll('.nav-tab').forEach(btn => {
   btn.addEventListener('click', () => navigateTo({tab: btn.dataset.tab}));
@@ -876,7 +925,7 @@ function toggleAutoscroll(){
     if(btn) btn.textContent = '⏸ Ferma';
   }
 }
-function setAutoscrollSpeed(v){ autoscrollSpeed = parseFloat(v) || 2; if(currentSong) saveSongSpeed(currentSong.id, autoscrollSpeed); }
+function setAutoscrollSpeed(v){ autoscrollSpeed = parseFloat(v) || 2; }
 
 /* ── ACCORDATORE ── */
 let tunerCtx = null, tunerStream = null, tunerAnalyser = null, tunerRAF = null;
