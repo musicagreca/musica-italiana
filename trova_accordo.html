@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Trova l'accordo a orecchio — Musica Greca</title>
+<style>
+  :root{
+    --bg:#f7f4ef; --sur:#fff; --bor:#e0d8cc; --acc:#2244aa;
+    --txt:#1a1814; --t2:#5a5448; --t3:#8a7f72; --strike:#c9c2b4;
+  }
+  *{box-sizing:border-box}
+  body{
+    background:var(--bg); color:var(--txt); font-family:'Karla',Arial,sans-serif;
+    margin:0; padding:1.2rem; max-width:900px; margin:0 auto;
+  }
+  h1{font-family:'Cormorant',serif; font-size:1.7rem; margin:.4rem 0 .2rem}
+  p.sub{color:var(--t2); font-size:.9rem; margin:0 0 1.2rem}
+  .toolbar{
+    display:flex; gap:.6rem; flex-wrap:wrap; align-items:center;
+    background:var(--sur); border:1px solid var(--bor); border-radius:10px;
+    padding:.7rem .9rem; margin-bottom:1rem; position:sticky; top:.5rem; z-index:5;
+  }
+  .toolbar input[type=text]{
+    flex:1; min-width:160px; padding:.5rem .7rem; border:1px solid var(--bor);
+    border-radius:8px; font-size:.95rem; background:var(--bg); color:var(--txt);
+  }
+  .toolbar button{
+    border:1px solid var(--bor); background:var(--sur); color:var(--t2);
+    border-radius:8px; padding:.5rem .8rem; font-size:.85rem; cursor:pointer;
+  }
+  .toolbar button:hover{background:var(--bg)}
+  .toolbar label{display:flex; align-items:center; gap:.35rem; font-size:.85rem; color:var(--t2); white-space:nowrap}
+  .root-group{margin-bottom:1.1rem}
+  .root-hdr{
+    font-family:'Cormorant',serif; font-weight:700; font-size:1.25rem;
+    color:var(--acc); margin:0 0 .4rem; padding-bottom:.2rem; border-bottom:1px solid var(--bor);
+    cursor:pointer; user-select:none; display:flex; align-items:center; gap:.4rem;
+  }
+  .root-hdr:hover{color:#16307a}
+  .root-hdr .arrow{font-size:.85rem; transition:transform .15s}
+  .root-group.collapsed .root-hdr .arrow{transform:rotate(-90deg)}
+  .root-group.collapsed .chord-grid{display:none}
+  .root-group{margin-bottom:.5rem}
+  .root-group:not(.collapsed){margin-bottom:1.1rem}
+  .chord-grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:.5rem;
+  }
+  .chord-card{
+    display:flex; align-items:center; gap:.5rem;
+    background:var(--sur); border:1px solid var(--bor); border-radius:8px;
+    padding:.45rem .6rem;
+  }
+  .chord-card.tried{opacity:.35}
+  .chord-card.tried .chord-name{text-decoration:line-through; text-decoration-color:var(--strike)}
+  .chord-name{font-weight:700; font-size:.95rem; flex:1}
+  .play-btn{
+    border:none; background:var(--acc); color:#fff; border-radius:50%;
+    width:30px; height:30px; font-size:.8rem; cursor:pointer; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .play-btn:active{transform:scale(.92)}
+  .play-btn.playing{background:#1e7a34}
+  .tried-chk{width:15px; height:15px; flex-shrink:0; cursor:pointer}
+  .hidden{display:none !important}
+  .empty-msg{color:var(--t3); font-size:.9rem; padding:2rem; text-align:center}
+
+  .chord-name{cursor:pointer}
+  .chord-name:hover{text-decoration:underline}
+
+  .collected-bar{
+    position:sticky; bottom:0; margin-top:1.5rem;
+    background:#fff; border-top:2px solid var(--acc); border-radius:10px 10px 0 0;
+    box-shadow:0 -4px 14px rgba(0,0,0,.08); padding:.9rem 1rem 1.1rem;
+  }
+  .collected-hdr{display:flex; align-items:center; justify-content:space-between; margin-bottom:.5rem}
+  .collected-hdr b{font-family:'Cormorant',serif; font-size:1.15rem; color:var(--acc)}
+  .clear-link{font-size:.82rem; color:var(--t3); cursor:pointer; text-decoration:underline; background:none; border:none}
+  .collected-chips{min-height:26px; margin-bottom:.6rem}
+  .collected-chip{
+    display:inline-flex; align-items:center; gap:.3rem; background:var(--bg); border:1px solid var(--bor);
+    border-radius:16px; padding:.2rem .5rem .2rem .7rem; margin:.15rem .25rem .15rem 0; font-size:.9rem; font-weight:700;
+  }
+  .collected-chip .x{cursor:pointer; color:var(--t3); font-weight:400; padding:0 .2rem}
+  .transposed-result{
+    background:#e8f3ea; border:1px solid #1e7a34; border-radius:8px; padding:.6rem .8rem;
+  }
+  .transposed-result .chords{font-size:1.15rem; font-weight:700; color:var(--txt)}
+  .adjustRow{display:flex; align-items:center; gap:.5rem; margin-top:.5rem}
+  .adjustRow button{
+    border:1px solid var(--bor); background:#fff; color:var(--txt);
+    border-radius:8px; width:30px; height:30px; font-size:1rem; cursor:pointer;
+  }
+  .adjustRow span{font-size:.8rem; color:var(--t2)}
+  .collected-empty{color:var(--t3); font-size:.85rem}
+  .chip-play, .shape-play{
+    border:none; background:var(--acc); color:#fff; border-radius:50%;
+    width:20px; height:20px; font-size:.6rem; cursor:pointer; flex-shrink:0;
+    display:inline-flex; align-items:center; justify-content:center; margin-right:.3rem;
+  }
+  .chip-play.playing, .shape-play.playing{background:#1e7a34}
+  .shape-item{display:inline-flex; align-items:center; gap:.15rem}
+</style>
+</head>
+<body>
+
+<h1>Trova l'accordo a orecchio</h1>
+<p class="sub">Tieni premuto il pulsante per sentire l'accordo (tutte le note insieme, come un pianoforte) — rilascia per fermarlo. Spunta la casella per segnare "già provato, non è questo" e toglierlo di mezzo mentre cerchi.</p>
+
+<div class="toolbar">
+  <input type="text" id="search" placeholder="Cerca (es. REm7, FA#, sus)...">
+  <label><input type="checkbox" id="hideTried"> Nascondi quelli già provati</label>
+  <button id="resetBtn">Azzera tutte le spunte</button>
+  <button id="collapseAllBtn">Comprimi tutte le note</button>
+  <button id="expandAllBtn">Espandi tutte le note</button>
+</div>
+
+<div id="content"></div>
+<div id="emptyMsg" class="empty-msg hidden">Nessun accordo corrisponde alla ricerca.</div>
+
+<div class="collected-bar">
+  <div class="collected-hdr">
+    <b>Accordi trovati</b>
+    <button class="clear-link" id="clearCollected">Svuota</button>
+  </div>
+  <div class="collected-chips" id="collectedChips"></div>
+  <div id="collectedResult"></div>
+</div>
+
+<script>
+const SUFFIXES = ['', 'm', '6', '7', '9', 'm6', 'm7', 'maj7', 'dim', 'aug', 'sus'];
+const SUFFIX_LABEL = {'':'','m':'m','6':'6','7':'7','9':'9','m6':'m6','m7':'m7','maj7':'maj7','dim':'dim','aug':'aug','sus':'sus'};
+
+const ROOTS = [
+  {code:'do',   label:'DO',   pc:0},
+  {code:'dodies',label:'DO#', pc:1},
+  {code:'reb',  label:'REb',  pc:1},
+  {code:'re',   label:'RE',   pc:2},
+  {code:'redies',label:'RE#',pc:3},
+  {code:'mib',  label:'MIb',  pc:3},
+  {code:'mi',   label:'MI',   pc:4},
+  {code:'fa',   label:'FA',   pc:5},
+  {code:'fadies',label:'FA#',pc:6},
+  {code:'sob',  label:'SOLb', pc:6},
+  {code:'sol',  label:'SOL',  pc:7},
+  {code:'soldies',label:'SOL#',pc:8},
+  {code:'lab',  label:'LAb',  pc:8},
+  {code:'la',   label:'LA',   pc:9},
+  {code:'ladies',label:'LA#',pc:10},
+  {code:'sib',  label:'SIb',  pc:10},
+  {code:'si',   label:'SI',   pc:11},
+];
+
+const CHORD_TONES = {
+  '':[0,4,7], 'm':[0,3,7], '6':[0,4,7,9], '7':[0,4,7,10],
+  '9':[0,4,7,10,14], 'm6':[0,3,7,9], 'm7':[0,3,7,10],
+  'maj7':[0,4,7,11], 'dim':[0,3,6,9], 'aug':[0,4,8], 'sus':[0,5,7]
+};
+
+function noteFreq(pc, octave){
+  const midi = (octave+1)*12 + pc;
+  return 440 * Math.pow(2, (midi-69)/12);
+}
+
+let audioCtx = null;
+function getCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function pianoVoice(ctx, freq, startAt){
+  const master = ctx.createGain();
+  master.connect(ctx.destination);
+
+  const partials = [
+    {mult:1,    gain:0.5},
+    {mult:2,    gain:0.14},
+    {mult:3,    gain:0.06},
+    {mult:4.2,  gain:0.03}
+  ];
+
+  const oscs = [];
+  partials.forEach(p=>{
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq * p.mult;
+    g.gain.setValueAtTime(0.0001, startAt);
+    g.gain.exponentialRampToValueAtTime(p.gain, startAt+0.012);
+    g.gain.exponentialRampToValueAtTime(Math.max(p.gain*0.35,0.0001), startAt+1.6);
+    osc.connect(g);
+    g.connect(master);
+    osc.start(startAt);
+    oscs.push({osc:osc, gain:g});
+  });
+
+  return {
+    stop:function(){
+      const now = ctx.currentTime;
+      master.gain.setValueAtTime(master.gain.value, now);
+      master.gain.exponentialRampToValueAtTime(0.0001, now+0.18);
+      oscs.forEach(o=> o.osc.stop(now+0.2));
+    }
+  };
+}
+
+const activeVoices = {};
+
+function startChord(pc, suffix, btn, key){
+  if(activeVoices[key]) return;
+  const ctx = getCtx();
+  const tones = CHORD_TONES[suffix];
+  const baseOctave = 4;
+  const now = ctx.currentTime;
+  btn.classList.add('playing');
+
+  const voices = tones.map(interval=>{
+    const freq = noteFreq((pc+interval)%12, baseOctave + Math.floor((pc+interval)/12));
+    return pianoVoice(ctx, freq, now);
+  });
+  activeVoices[key] = voices;
+}
+
+function stopChord(btn, key){
+  const voices = activeVoices[key];
+  if(!voices) return;
+  voices.forEach(v=>v.stop());
+  delete activeVoices[key];
+  btn.classList.remove('playing');
+}
+
+const triedSet = new Set();
+
+function buildUI(){
+  const content = document.getElementById('content');
+  content.innerHTML = '';
+  ROOTS.forEach(root=>{
+    const group = document.createElement('div');
+    group.className = 'root-group';
+    group.dataset.rootLabel = root.label;
+
+    const hdr = document.createElement('div');
+    hdr.className = 'root-hdr';
+    hdr.innerHTML = '<span class="arrow">&#9660;</span><span>'+root.label+'</span>';
+    hdr.addEventListener('click', ()=>{
+      group.classList.toggle('collapsed');
+    });
+    group.appendChild(hdr);
+
+    const grid = document.createElement('div');
+    grid.className = 'chord-grid';
+
+    SUFFIXES.forEach(suf=>{
+      const name = root.label + SUFFIX_LABEL[suf];
+      const key = root.code+'|'+suf;
+
+      const card = document.createElement('div');
+      card.className = 'chord-card';
+      card.dataset.key = key;
+      card.dataset.search = name.toLowerCase();
+
+      const playBtn = document.createElement('button');
+      playBtn.className = 'play-btn';
+      playBtn.innerHTML = '&#9658;';
+      playBtn.setAttribute('aria-label', 'Tieni premuto per ascoltare '+name);
+
+      const start = (e)=>{ e.preventDefault(); startChord(root.pc, suf, playBtn, key); };
+      const stop = (e)=>{ stopChord(playBtn, key); };
+
+      playBtn.addEventListener('pointerdown', start);
+      playBtn.addEventListener('pointerup', stop);
+      playBtn.addEventListener('pointerleave', stop);
+      playBtn.addEventListener('pointercancel', stop);
+
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'chord-name';
+      nameSpan.textContent = name;
+      nameSpan.title = 'Clicca per aggiungerlo agli accordi trovati';
+      nameSpan.addEventListener('click', ()=> addCollected(name));
+
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.className = 'tried-chk';
+      chk.title = 'Segna come già provato';
+      chk.addEventListener('change', ()=>{
+        if(chk.checked){ triedSet.add(key); card.classList.add('tried'); }
+        else { triedSet.delete(key); card.classList.remove('tried'); }
+        applyFilters();
+      });
+
+      card.appendChild(playBtn);
+      card.appendChild(nameSpan);
+      card.appendChild(chk);
+      grid.appendChild(card);
+    });
+
+    group.appendChild(grid);
+    content.appendChild(group);
+  });
+}
+
+function applyFilters(){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const hideTried = document.getElementById('hideTried').checked;
+  let anyVisible = false;
+
+  document.querySelectorAll('.root-group').forEach(group=>{
+    let groupHasVisible = false;
+    group.querySelectorAll('.chord-card').forEach(card=>{
+      const matchesSearch = !q || card.dataset.search.includes(q);
+      const isTried = triedSet.has(card.dataset.key);
+      const hideForTried = hideTried && isTried;
+      const visible = matchesSearch && !hideForTried;
+      card.classList.toggle('hidden', !visible);
+      if(visible) groupHasVisible = true;
+    });
+    group.classList.toggle('hidden', !groupHasVisible);
+    if(groupHasVisible) anyVisible = true;
+  });
+
+  document.getElementById('emptyMsg').classList.toggle('hidden', anyVisible);
+}
+
+document.getElementById('search').addEventListener('input', applyFilters);
+document.getElementById('hideTried').addEventListener('change', applyFilters);
+document.getElementById('collapseAllBtn').addEventListener('click', ()=>{
+  document.querySelectorAll('.root-group').forEach(g=>g.classList.add('collapsed'));
+});
+document.getElementById('expandAllBtn').addEventListener('click', ()=>{
+  document.querySelectorAll('.root-group').forEach(g=>g.classList.remove('collapsed'));
+});
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  triedSet.clear();
+  document.querySelectorAll('.tried-chk').forEach(c=>c.checked=false);
+  document.querySelectorAll('.chord-card').forEach(c=>c.classList.remove('tried'));
+  applyFilters();
+});
+
+// ---- Accordi raccolti + trasposizione ----
+const NOTE_PC = {
+  'do':0,'do#':1,'reb':1,'re':2,'re#':3,'mib':3,'mi':4,
+  'fa':5,'fa#':6,'solb':6,'sol':7,'sol#':8,'lab':8,
+  'la':9,'la#':10,'sib':10,'si':11
+};
+const PC_TO_NAME = ['DO','DO#','RE','RE#','MI','FA','FA#','SOL','SOL#','LA','LA#','SI'];
+const NATURAL_PCS = new Set([0,2,4,5,7,9,11]);
+
+function parseChordName(name){
+  const m = name.match(/^(DO|RE|MI|FA|SOL|LA|SI)(#|b)?(.*)$/);
+  if(!m) return null;
+  const key = (m[1]+(m[2]||'')).toLowerCase();
+  if(!(key in NOTE_PC)) return null;
+  return { pc: NOTE_PC[key], suffix: m[3]||'' };
+}
+
+let collected = [];
+let collectedShift = 0;
+
+function addCollected(name){
+  collected.push(name);
+  renderCollected(true);
+}
+
+function removeCollected(idx){
+  collected.splice(idx,1);
+  renderCollected(false);
+}
+
+function computeBestShift(items){
+  let best = {shift:0, score:-1};
+  for(let shift=0; shift<12; shift++){
+    let score = 0;
+    items.forEach(it=>{
+      const p = parseChordName(it);
+      if(!p) return;
+      const pc = ((p.pc - shift) % 12 + 12) % 12;
+      if(NATURAL_PCS.has(pc)) score++;
+    });
+    if(score > best.score) best = {shift, score};
+  }
+  return best.shift;
+}
+
+function renderCollected(recalcShift){
+  const chipsBox = document.getElementById('collectedChips');
+  const resultBox = document.getElementById('collectedResult');
+
+  if(collected.length === 0){
+    chipsBox.innerHTML = '<span class="collected-empty">Clicca sul nome di un accordo qui sopra per aggiungerlo qui.</span>';
+    resultBox.innerHTML = '';
+    return;
+  }
+
+  chipsBox.innerHTML = collected.map((name, i)=>
+    '<span class="collected-chip">'+
+      '<button class="chip-play" data-idx="'+i+'" aria-label="Ascolta '+name+'">&#9658;</button>'+
+      name+
+      '<span class="x" data-idx="'+i+'">&times;</span>'+
+    '</span>'
+  ).join('');
+
+  chipsBox.querySelectorAll('.x').forEach(x=>{
+    x.addEventListener('click', ()=> removeCollected(parseInt(x.dataset.idx,10)));
+  });
+
+  chipsBox.querySelectorAll('.chip-play').forEach(btn=>{
+    const idx = parseInt(btn.dataset.idx,10);
+    const name = collected[idx];
+    const p = parseChordName(name);
+    if(!p) return;
+    const key = 'chip'+idx;
+    const start = (e)=>{ e.preventDefault(); startChord(p.pc, p.suffix, btn, key); };
+    const stop = ()=>{ stopChord(btn, key); };
+    btn.addEventListener('pointerdown', start);
+    btn.addEventListener('pointerup', stop);
+    btn.addEventListener('pointerleave', stop);
+    btn.addEventListener('pointercancel', stop);
+  });
+
+  if(recalcShift){
+    collectedShift = computeBestShift(collected);
+  }
+
+  const shapes = collected.map(name=>{
+    const p = parseChordName(name);
+    if(!p) return {label:name, pc:null, suffix:''};
+    const pc = ((p.pc - collectedShift) % 12 + 12) % 12;
+    return {label: PC_TO_NAME[pc] + p.suffix, pc: pc, suffix: p.suffix};
+  });
+
+  let html = '<div class="transposed-result">';
+  html += '<div class="chords">' + shapes.map((s,i)=>
+    '<span class="shape-item">'+
+      '<button class="shape-play" data-idx="'+i+'" aria-label="Ascolta '+s.label+'">&#9658;</button>'+
+      s.label+
+    '</span>'
+  ).join('&nbsp;&nbsp;') + '</div>';
+  html += '<div class="adjustRow"><button id="cShiftDown">&minus;</button>';
+  html += '<span>Sposta un po\' pi\u00f9 su o pi\u00f9 gi\u00f9</span>';
+  html += '<button id="cShiftUp">+</button></div></div>';
+  resultBox.innerHTML = html;
+
+  resultBox.querySelectorAll('.shape-play').forEach(btn=>{
+    const idx = parseInt(btn.dataset.idx,10);
+    const s = shapes[idx];
+    if(s.pc === null) return;
+    const key = 'shape'+idx;
+    const start = (e)=>{ e.preventDefault(); startChord(s.pc, s.suffix, btn, key); };
+    const stop = ()=>{ stopChord(btn, key); };
+    btn.addEventListener('pointerdown', start);
+    btn.addEventListener('pointerup', stop);
+    btn.addEventListener('pointerleave', stop);
+    btn.addEventListener('pointercancel', stop);
+  });
+
+  document.getElementById('cShiftDown').addEventListener('click', ()=>{
+    collectedShift = ((collectedShift - 1) % 12 + 12) % 12;
+    renderCollected(false);
+  });
+  document.getElementById('cShiftUp').addEventListener('click', ()=>{
+    collectedShift = ((collectedShift + 1) % 12 + 12) % 12;
+    renderCollected(false);
+  });
+}
+
+document.getElementById('clearCollected').addEventListener('click', ()=>{
+  collected = [];
+  renderCollected(false);
+});
+
+renderCollected(false);
+buildUI();
+</script>
+
+</body>
+</html>
