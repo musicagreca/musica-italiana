@@ -506,6 +506,17 @@
     .song-meta{ padding-left:0; }
   }
 
+  @media (max-width:480px){
+    .song-header h2{ font-size:1.5rem; }
+    .song-info{ font-size:0.74rem; gap:4px 12px; }
+    pre.song-body{ font-size:0.68rem; line-height:1.75; }
+    .lyrics-block{ padding:16px 12px 20px; }
+    .lyrics-plain{ font-size:1rem; }
+    .transpose-bar, .autoscroll-bar{ padding:10px 12px; gap:8px; }
+    .view-toggle a{ padding:6px 12px; font-size:0.72rem; }
+    .tuner-open-btn{ font-size:0.7rem; padding:6px 10px; }
+  }
+
   @media print{
     header.site, .nav-tabs, .back-btn, .view-toggle, .transpose-bar, footer, #search, .alpha-bar{ display:none !important; }
     #list-view{ display:none !important; }
