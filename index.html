@@ -159,6 +159,123 @@
     font-family:'JetBrains Mono', monospace; font-size:11px; cursor:pointer; padding:4px;
   }
 
+  #notes-lightbox{
+    display:none; position:fixed; inset:0; background:rgba(43,36,32,.72);
+    z-index:999; align-items:center; justify-content:center; padding:16px;
+  }
+  #notes-lightbox.open{ display:flex; }
+  .notes-box{ max-width:360px; max-height:80vh; overflow-y:auto; text-align:left; }
+  .notes-add-row{ display:flex; gap:6px; margin-bottom:14px; }
+  .notes-add-row input{
+    flex:1; padding:8px 10px; border:1px solid var(--line); border-radius:3px;
+    font-family:inherit; font-size:0.85rem;
+  }
+  .notes-add-btn{
+    background:var(--wine); color:#fffdf8; border:none; border-radius:3px;
+    width:36px; font-size:1.1rem; cursor:pointer;
+  }
+  .notes-add-btn:hover{ background:var(--wine-dark); }
+  .note-item{
+    display:flex; justify-content:space-between; align-items:flex-start; gap:8px;
+    padding:8px 0; border-bottom:1px solid var(--line);
+  }
+  .note-item .note-text{ font-size:0.86rem; line-height:1.4; }
+  .note-item .note-date{ font-family:'JetBrains Mono', monospace; font-size:10px; color:#8a7f6f; display:block; margin-top:2px; }
+  .note-item .note-del{ cursor:pointer; color:#b8ac97; font-size:0.9rem; flex-shrink:0; }
+  .note-item .note-del:hover{ color:var(--wine); }
+  #notes-empty{ font-size:12px; color:#8a7f6f; padding:8px 0; }
+
+  #chordfinder-lightbox{
+    display:none; position:fixed; inset:0; background:rgba(43,36,32,.72);
+    z-index:999; align-items:center; justify-content:center; padding:16px;
+  }
+  #chordfinder-lightbox.open{ display:flex; }
+  #chordfinder-lightbox .cf-panel{
+    --acc: var(--wine); --sur:#fffdf8; --bor: var(--line);
+    --txt: var(--ink); --t2:#7a6f5f; --t3:#8a7f72; --bg: var(--paper); --strike:#c9c2b4;
+    font-family:'Source Sans 3', Arial, sans-serif; color:var(--txt);
+    max-width:640px; width:100%; max-height:85vh; overflow-y:auto; text-align:left;
+    background:var(--paper); border-radius:6px; padding:26px 24px; position:relative;
+    border:1px solid var(--line);
+  }
+  #chordfinder-lightbox .cf-panel h1{ font-family:'Fraunces', serif; font-size:1.5rem; margin:.2rem 0 .2rem; color:var(--wine-dark); }
+  #chordfinder-lightbox .cf-panel p.sub{ color:var(--t2); font-size:.85rem; margin:0 0 1rem; }
+  #chordfinder-lightbox .toolbar{
+    display:flex; gap:.6rem; flex-wrap:wrap; align-items:center;
+    background:var(--sur); border:1px solid var(--bor); border-radius:8px;
+    padding:.6rem .8rem; margin-bottom:1rem;
+  }
+  #chordfinder-lightbox .toolbar input[type=text]{
+    flex:1; min-width:140px; padding:.5rem .6rem; border:1px solid var(--bor);
+    border-radius:6px; font-size:.9rem; background:#fff; color:var(--txt);
+  }
+  #chordfinder-lightbox .toolbar button{
+    border:1px solid var(--bor); background:#fff; color:var(--t2);
+    border-radius:6px; padding:.45rem .7rem; font-size:.8rem; cursor:pointer;
+  }
+  #chordfinder-lightbox .toolbar button:hover{ background:var(--bg); }
+  #chordfinder-lightbox .toolbar label{ display:flex; align-items:center; gap:.3rem; font-size:.8rem; color:var(--t2); white-space:nowrap; }
+  #chordfinder-lightbox .root-hdr{
+    font-family:'Fraunces', serif; font-weight:700; font-size:1.15rem;
+    color:var(--acc); margin:0 0 .4rem; padding-bottom:.2rem; border-bottom:1px solid var(--bor);
+    cursor:pointer; user-select:none; display:flex; align-items:center; gap:.4rem;
+  }
+  #chordfinder-lightbox .root-hdr:hover{ color:var(--wine-dark); }
+  #chordfinder-lightbox .root-hdr .arrow{ font-size:.8rem; transition:transform .15s; }
+  #chordfinder-lightbox .root-group.collapsed .root-hdr .arrow{ transform:rotate(-90deg); }
+  #chordfinder-lightbox .root-group.collapsed .chord-grid{ display:none; }
+  #chordfinder-lightbox .root-group{ margin-bottom:.5rem; }
+  #chordfinder-lightbox .root-group:not(.collapsed){ margin-bottom:1rem; }
+  #chordfinder-lightbox .chord-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:.4rem; }
+  #chordfinder-lightbox .chord-card{
+    display:flex; align-items:center; gap:.4rem;
+    background:var(--sur); border:1px solid var(--bor); border-radius:6px;
+    padding:.4rem .5rem;
+  }
+  #chordfinder-lightbox .chord-card.tried{ opacity:.35; }
+  #chordfinder-lightbox .chord-card.tried .chord-name{ text-decoration:line-through; text-decoration-color:var(--strike); }
+  #chordfinder-lightbox .chord-name{ font-weight:700; font-size:.88rem; flex:1; cursor:pointer; }
+  #chordfinder-lightbox .chord-name:hover{ text-decoration:underline; }
+  #chordfinder-lightbox .play-btn{
+    border:none; background:var(--acc); color:#fff; border-radius:50%;
+    width:28px; height:28px; font-size:.75rem; cursor:pointer; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  #chordfinder-lightbox .play-btn.playing{ background:#4a7a4a; }
+  #chordfinder-lightbox .tried-chk{ width:14px; height:14px; flex-shrink:0; cursor:pointer; }
+  #chordfinder-lightbox .cf-hidden{ display:none !important; }
+  #chordfinder-lightbox .empty-msg{ color:var(--t3); font-size:.85rem; padding:1.5rem; text-align:center; }
+  #chordfinder-lightbox .collected-bar{
+    position:sticky; bottom:-26px; margin:1.2rem -24px -26px;
+    background:#fff; border-top:2px solid var(--acc);
+    box-shadow:0 -4px 14px rgba(0,0,0,.08); padding:.8rem 24px 1rem;
+  }
+  #chordfinder-lightbox .collected-hdr{ display:flex; align-items:center; justify-content:space-between; margin-bottom:.5rem; }
+  #chordfinder-lightbox .collected-hdr b{ font-family:'Fraunces', serif; font-size:1.05rem; color:var(--acc); }
+  #chordfinder-lightbox .clear-link{ font-size:.78rem; color:var(--t3); cursor:pointer; text-decoration:underline; background:none; border:none; }
+  #chordfinder-lightbox .collected-chips{ min-height:24px; margin-bottom:.5rem; }
+  #chordfinder-lightbox .collected-chip{
+    display:inline-flex; align-items:center; gap:.3rem; background:var(--bg); border:1px solid var(--bor);
+    border-radius:16px; padding:.2rem .5rem .2rem .7rem; margin:.12rem .2rem .12rem 0; font-size:.85rem; font-weight:700;
+  }
+  #chordfinder-lightbox .collected-chip .x{ cursor:pointer; color:var(--t3); font-weight:400; padding:0 .2rem; }
+  #chordfinder-lightbox .transposed-result{ background:#eef3ea; border:1px solid #4a7a4a; border-radius:6px; padding:.6rem .7rem; }
+  #chordfinder-lightbox .transposed-result .chords{ font-size:1.05rem; font-weight:700; color:var(--txt); }
+  #chordfinder-lightbox .adjustRow{ display:flex; align-items:center; gap:.5rem; margin-top:.5rem; }
+  #chordfinder-lightbox .adjustRow button{
+    border:1px solid var(--bor); background:#fff; color:var(--txt);
+    border-radius:6px; width:28px; height:28px; font-size:.95rem; cursor:pointer;
+  }
+  #chordfinder-lightbox .adjustRow span{ font-size:.76rem; color:var(--t2); }
+  #chordfinder-lightbox .collected-empty{ color:var(--t3); font-size:.82rem; }
+  #chordfinder-lightbox .chip-play, #chordfinder-lightbox .shape-play{
+    border:none; background:var(--acc); color:#fff; border-radius:50%;
+    width:19px; height:19px; font-size:.58rem; cursor:pointer; flex-shrink:0;
+    display:inline-flex; align-items:center; justify-content:center; margin-right:.3rem;
+  }
+  #chordfinder-lightbox .chip-play.playing, #chordfinder-lightbox .shape-play.playing{ background:#4a7a4a; }
+  #chordfinder-lightbox .shape-item{ display:inline-flex; align-items:center; gap:.15rem; }
+
   .autoscroll-bar{
     display:flex; align-items:center; gap:10px;
     padding:8px 14px; margin-bottom:8px;
@@ -399,6 +516,8 @@
   <p class="tagline">canzoni italiane · accordi · testi</p>
   <button class="tuner-open-btn" onclick="openTuner()">🎯 Accordatore</button>
   <button class="tuner-open-btn" onclick="openKeyFinder()">🎼 Trova tonalità</button>
+  <button class="tuner-open-btn" onclick="openNotes()">📝 Appunti</button>
+  <button class="tuner-open-btn" onclick="openChordFinder()">🎸 Trova accordo</button>
 </header>
 
 <div class="wrap">
@@ -536,6 +655,52 @@
       <div id="key-conf">Canta qualche frase per iniziare la stima</div>
       <div class="key-bars" id="key-bars"></div>
       <button class="key-reset-btn" id="key-reset-btn" onclick="resetKeyFinder()">↺ azzera e ricomincia</button>
+    </div>
+  </div>
+</div>
+
+<div id="notes-lightbox" onclick="closeNotes(event)">
+  <div class="tuner-box notes-box" onclick="event.stopPropagation()">
+    <button class="tuner-close" onclick="closeNotes()">✕</button>
+    <div class="tuner-title">Appunti veloci</div>
+    <p class="key-sub">Solo su questo dispositivo — usa "copia tutto" per portarli altrove.</p>
+
+    <div class="notes-add-row">
+      <input type="text" id="notes-input" placeholder="Es. canzone sentita in radio, dice 'vecchio frack'…">
+      <button class="notes-add-btn" onclick="addNote()">+</button>
+    </div>
+
+    <div id="notes-list"></div>
+    <div id="notes-empty" style="display:none;">Nessun appunto ancora.</div>
+
+    <button class="key-reset-btn" id="notes-copy-btn" onclick="copyAllNotes()">📋 copia tutto</button>
+  </div>
+</div>
+
+<div id="chordfinder-lightbox" onclick="closeChordFinder(event)">
+  <div class="cf-panel" onclick="event.stopPropagation()">
+    <button class="tuner-close" onclick="closeChordFinder()">✕</button>
+    <h1>Trova l'accordo a orecchio</h1>
+    <p class="sub">Tieni premuto il pulsante per sentire l'accordo (tutte le note insieme, come un pianoforte) — rilascia per fermarlo. Spunta la casella per segnare "già provato, non è questo" e toglierlo di mezzo mentre cerchi.</p>
+
+    <div class="toolbar">
+      <input type="text" id="cf-search" placeholder="Cerca (es. REm7, FA#, sus)...">
+      <label><input type="checkbox" id="cf-hideTried"> Nascondi quelli già provati</label>
+      <button id="cf-resetBtn">Azzera tutte le spunte</button>
+      <button id="cf-collapseAllBtn">Comprimi tutte le note</button>
+      <button id="cf-expandAllBtn">Espandi tutte le note</button>
+    </div>
+
+    <div id="cf-content"></div>
+    <div id="cf-emptyMsg" class="empty-msg cf-hidden">Nessun accordo corrisponde alla ricerca.</div>
+
+    <div class="collected-bar">
+      <div class="collected-hdr">
+        <b>Accordi trovati</b>
+        <button class="clear-link" id="cf-clearCollected">Svuota</button>
+      </div>
+      <div class="collected-chips" id="cf-collectedChips"></div>
+      <div id="cf-collectedResult"></div>
     </div>
   </div>
 </div>
@@ -1262,6 +1427,426 @@ function resetKeyFinder(){
   document.getElementById('key-conf').textContent = 'Canta qualche frase per iniziare la stima';
   document.querySelectorAll('.key-bars .key-bar').forEach(b => { b.style.height = '4px'; b.classList.remove('top'); });
 }
+
+/* ── APPUNTI VELOCI ── */
+const NOTES_KEY = 'canzoniere_appunti';
+
+function loadNotes(){
+  try{ return JSON.parse(localStorage.getItem(NOTES_KEY)) || []; }
+  catch(e){ return []; }
+}
+function saveNotes(notes){
+  localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+}
+
+function openNotes(){
+  document.getElementById('notes-lightbox').classList.add('open');
+  renderNotes();
+  document.getElementById('notes-input').focus();
+}
+function closeNotes(ev){
+  document.getElementById('notes-lightbox').classList.remove('open');
+}
+
+function renderNotes(){
+  const notes = loadNotes();
+  const listEl = document.getElementById('notes-list');
+  const emptyEl = document.getElementById('notes-empty');
+  listEl.innerHTML = '';
+  emptyEl.style.display = notes.length ? 'none' : 'block';
+  notes.slice().reverse().forEach((n, revIdx) => {
+    const idx = notes.length - 1 - revIdx;
+    const row = document.createElement('div');
+    row.className = 'note-item';
+    const dateStr = new Date(n.date).toLocaleDateString('it-IT', {day:'numeric', month:'short'});
+    row.innerHTML = `<div><span class="note-text">${escapeHtml(n.text)}</span><span class="note-date">${dateStr}</span></div><span class="note-del">✕</span>`;
+    row.querySelector('.note-del').addEventListener('click', () => {
+      const cur = loadNotes();
+      cur.splice(idx, 1);
+      saveNotes(cur);
+      renderNotes();
+    });
+    listEl.appendChild(row);
+  });
+}
+
+function addNote(){
+  const input = document.getElementById('notes-input');
+  const text = input.value.trim();
+  if(!text) return;
+  const notes = loadNotes();
+  notes.push({text, date: Date.now()});
+  saveNotes(notes);
+  input.value = '';
+  renderNotes();
+}
+
+const notesInputEl = document.getElementById('notes-input');
+if(notesInputEl) notesInputEl.addEventListener('keydown', (e) => { if(e.key === 'Enter') addNote(); });
+
+function copyAllNotes(){
+  const notes = loadNotes();
+  if(!notes.length) return;
+  const text = notes.map(n => '- ' + n.text + ' (' + new Date(n.date).toLocaleDateString('it-IT') + ')').join('\n');
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('notes-copy-btn');
+    const old = btn.textContent;
+    btn.textContent = '✓ copiato';
+    setTimeout(() => { btn.textContent = old; }, 1500);
+  });
+}
+
+/* ── TROVA ACCORDO (a orecchio) ── */
+const CF_SUFFIXES = ['', 'm', '6', '7', '9', 'm6', 'm7', 'maj7', 'dim', 'aug', 'sus'];
+const CF_SUFFIX_LABEL = {'':'','m':'m','6':'6','7':'7','9':'9','m6':'m6','m7':'m7','maj7':'maj7','dim':'dim','aug':'aug','sus':'sus'};
+
+const CF_ROOTS = [
+  {code:'do',   label:'DO',   pc:0},
+  {code:'dodies',label:'DO#', pc:1},
+  {code:'reb',  label:'REb',  pc:1},
+  {code:'re',   label:'RE',   pc:2},
+  {code:'redies',label:'RE#',pc:3},
+  {code:'mib',  label:'MIb',  pc:3},
+  {code:'mi',   label:'MI',   pc:4},
+  {code:'fa',   label:'FA',   pc:5},
+  {code:'fadies',label:'FA#',pc:6},
+  {code:'sob',  label:'SOLb', pc:6},
+  {code:'sol',  label:'SOL',  pc:7},
+  {code:'soldies',label:'SOL#',pc:8},
+  {code:'lab',  label:'LAb',  pc:8},
+  {code:'la',   label:'LA',   pc:9},
+  {code:'ladies',label:'LA#',pc:10},
+  {code:'sib',  label:'SIb',  pc:10},
+  {code:'si',   label:'SI',   pc:11},
+];
+
+const CF_CHORD_TONES = {
+  '':[0,4,7], 'm':[0,3,7], '6':[0,4,7,9], '7':[0,4,7,10],
+  '9':[0,4,7,10,14], 'm6':[0,3,7,9], 'm7':[0,3,7,10],
+  'maj7':[0,4,7,11], 'dim':[0,3,6,9], 'aug':[0,4,8], 'sus':[0,5,7]
+};
+
+function cfNoteFreq(pc, octave){
+  const midi = (octave+1)*12 + pc;
+  return 440 * Math.pow(2, (midi-69)/12);
+}
+
+let cfAudioCtx = null;
+function cfGetCtx(){
+  if(!cfAudioCtx) cfAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if(cfAudioCtx.state === 'suspended') cfAudioCtx.resume();
+  return cfAudioCtx;
+}
+
+function cfPianoVoice(ctx, freq, startAt){
+  const master = ctx.createGain();
+  master.connect(ctx.destination);
+
+  const partials = [
+    {mult:1,    gain:0.5},
+    {mult:2,    gain:0.14},
+    {mult:3,    gain:0.06},
+    {mult:4.2,  gain:0.03}
+  ];
+
+  const oscs = [];
+  partials.forEach(p=>{
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq * p.mult;
+    g.gain.setValueAtTime(0.0001, startAt);
+    g.gain.exponentialRampToValueAtTime(p.gain, startAt+0.012);
+    g.gain.exponentialRampToValueAtTime(Math.max(p.gain*0.35,0.0001), startAt+1.6);
+    osc.connect(g);
+    g.connect(master);
+    osc.start(startAt);
+    oscs.push({osc:osc, gain:g});
+  });
+
+  return {
+    stop:function(){
+      const now = ctx.currentTime;
+      master.gain.setValueAtTime(master.gain.value, now);
+      master.gain.exponentialRampToValueAtTime(0.0001, now+0.18);
+      oscs.forEach(o=> o.osc.stop(now+0.2));
+    }
+  };
+}
+
+const cfActiveVoices = {};
+
+function cfStartChord(pc, suffix, btn, key){
+  if(cfActiveVoices[key]) return;
+  const ctx = cfGetCtx();
+  const tones = CF_CHORD_TONES[suffix];
+  const baseOctave = 4;
+  const now = ctx.currentTime;
+  btn.classList.add('playing');
+
+  const voices = tones.map(interval=>{
+    const freq = cfNoteFreq((pc+interval)%12, baseOctave + Math.floor((pc+interval)/12));
+    return cfPianoVoice(ctx, freq, now);
+  });
+  cfActiveVoices[key] = voices;
+}
+
+function cfStopChord(btn, key){
+  const voices = cfActiveVoices[key];
+  if(!voices) return;
+  voices.forEach(v=>v.stop());
+  delete cfActiveVoices[key];
+  btn.classList.remove('playing');
+}
+
+const cfTriedSet = new Set();
+
+function openChordFinder(){
+  document.getElementById('chordfinder-lightbox').classList.add('open');
+}
+function closeChordFinder(ev){
+  document.getElementById('chordfinder-lightbox').classList.remove('open');
+}
+
+function cfBuildUI(){
+  const content = document.getElementById('cf-content');
+  content.innerHTML = '';
+  CF_ROOTS.forEach(root=>{
+    const group = document.createElement('div');
+    group.className = 'root-group';
+    group.dataset.rootLabel = root.label;
+
+    const hdr = document.createElement('div');
+    hdr.className = 'root-hdr';
+    hdr.innerHTML = '<span class="arrow">&#9660;</span><span>'+root.label+'</span>';
+    hdr.addEventListener('click', ()=>{
+      group.classList.toggle('collapsed');
+    });
+    group.appendChild(hdr);
+
+    const grid = document.createElement('div');
+    grid.className = 'chord-grid';
+
+    CF_SUFFIXES.forEach(suf=>{
+      const name = root.label + CF_SUFFIX_LABEL[suf];
+      const key = root.code+'|'+suf;
+
+      const card = document.createElement('div');
+      card.className = 'chord-card';
+      card.dataset.key = key;
+      card.dataset.search = name.toLowerCase();
+
+      const playBtn = document.createElement('button');
+      playBtn.className = 'play-btn';
+      playBtn.innerHTML = '&#9658;';
+      playBtn.setAttribute('aria-label', 'Tieni premuto per ascoltare '+name);
+
+      const start = (e)=>{ e.preventDefault(); cfStartChord(root.pc, suf, playBtn, key); };
+      const stop = (e)=>{ cfStopChord(playBtn, key); };
+
+      playBtn.addEventListener('pointerdown', start);
+      playBtn.addEventListener('pointerup', stop);
+      playBtn.addEventListener('pointerleave', stop);
+      playBtn.addEventListener('pointercancel', stop);
+
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'chord-name';
+      nameSpan.textContent = name;
+      nameSpan.title = 'Clicca per aggiungerlo agli accordi trovati';
+      nameSpan.addEventListener('click', ()=> cfAddCollected(name));
+
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.className = 'tried-chk';
+      chk.title = 'Segna come già provato';
+      chk.addEventListener('change', ()=>{
+        if(chk.checked){ cfTriedSet.add(key); card.classList.add('tried'); }
+        else { cfTriedSet.delete(key); card.classList.remove('tried'); }
+        cfApplyFilters();
+      });
+
+      card.appendChild(playBtn);
+      card.appendChild(nameSpan);
+      card.appendChild(chk);
+      grid.appendChild(card);
+    });
+
+    group.appendChild(grid);
+    content.appendChild(group);
+  });
+}
+
+function cfApplyFilters(){
+  const q = document.getElementById('cf-search').value.trim().toLowerCase();
+  const hideTried = document.getElementById('cf-hideTried').checked;
+  let anyVisible = false;
+
+  document.querySelectorAll('#chordfinder-lightbox .root-group').forEach(group=>{
+    let groupHasVisible = false;
+    group.querySelectorAll('.chord-card').forEach(card=>{
+      const matchesSearch = !q || card.dataset.search.includes(q);
+      const isTried = cfTriedSet.has(card.dataset.key);
+      const hideForTried = hideTried && isTried;
+      const visible = matchesSearch && !hideForTried;
+      card.classList.toggle('cf-hidden', !visible);
+      if(visible) groupHasVisible = true;
+    });
+    group.classList.toggle('cf-hidden', !groupHasVisible);
+    if(groupHasVisible) anyVisible = true;
+  });
+
+  document.getElementById('cf-emptyMsg').classList.toggle('cf-hidden', anyVisible);
+}
+
+document.getElementById('cf-search').addEventListener('input', cfApplyFilters);
+document.getElementById('cf-hideTried').addEventListener('change', cfApplyFilters);
+document.getElementById('cf-collapseAllBtn').addEventListener('click', ()=>{
+  document.querySelectorAll('#chordfinder-lightbox .root-group').forEach(g=>g.classList.add('collapsed'));
+});
+document.getElementById('cf-expandAllBtn').addEventListener('click', ()=>{
+  document.querySelectorAll('#chordfinder-lightbox .root-group').forEach(g=>g.classList.remove('collapsed'));
+});
+document.getElementById('cf-resetBtn').addEventListener('click', ()=>{
+  cfTriedSet.clear();
+  document.querySelectorAll('#chordfinder-lightbox .tried-chk').forEach(c=>c.checked=false);
+  document.querySelectorAll('#chordfinder-lightbox .chord-card').forEach(c=>c.classList.remove('tried'));
+  cfApplyFilters();
+});
+
+// ---- Accordi raccolti + trasposizione ----
+const CF_NOTE_PC = {
+  'do':0,'do#':1,'reb':1,'re':2,'re#':3,'mib':3,'mi':4,
+  'fa':5,'fa#':6,'solb':6,'sol':7,'sol#':8,'lab':8,
+  'la':9,'la#':10,'sib':10,'si':11
+};
+const CF_PC_TO_NAME = ['DO','DO#','RE','RE#','MI','FA','FA#','SOL','SOL#','LA','LA#','SI'];
+const CF_NATURAL_PCS = new Set([0,2,4,5,7,9,11]);
+
+function cfParseChordName(name){
+  const m = name.match(/^(DO|RE|MI|FA|SOL|LA|SI)(#|b)?(.*)$/);
+  if(!m) return null;
+  const key = (m[1]+(m[2]||'')).toLowerCase();
+  if(!(key in CF_NOTE_PC)) return null;
+  return { pc: CF_NOTE_PC[key], suffix: m[3]||'' };
+}
+
+let cfCollected = [];
+let cfCollectedShift = 0;
+
+function cfAddCollected(name){
+  cfCollected.push(name);
+  cfRenderCollected(true);
+}
+
+function cfRemoveCollected(idx){
+  cfCollected.splice(idx,1);
+  cfRenderCollected(false);
+}
+
+function cfComputeBestShift(items){
+  let best = {shift:0, score:-1};
+  for(let shift=0; shift<12; shift++){
+    let score = 0;
+    items.forEach(it=>{
+      const p = cfParseChordName(it);
+      if(!p) return;
+      const pc = ((p.pc - shift) % 12 + 12) % 12;
+      if(CF_NATURAL_PCS.has(pc)) score++;
+    });
+    if(score > best.score) best = {shift, score};
+  }
+  return best.shift;
+}
+
+function cfRenderCollected(recalcShift){
+  const chipsBox = document.getElementById('cf-collectedChips');
+  const resultBox = document.getElementById('cf-collectedResult');
+
+  if(cfCollected.length === 0){
+    chipsBox.innerHTML = '<span class="collected-empty">Clicca sul nome di un accordo qui sopra per aggiungerlo qui.</span>';
+    resultBox.innerHTML = '';
+    return;
+  }
+
+  chipsBox.innerHTML = cfCollected.map((name, i)=>
+    '<span class="collected-chip">'+
+      '<button class="chip-play" data-idx="'+i+'" aria-label="Ascolta '+name+'">&#9658;</button>'+
+      name+
+      '<span class="x" data-idx="'+i+'">&times;</span>'+
+    '</span>'
+  ).join('');
+
+  chipsBox.querySelectorAll('.x').forEach(x=>{
+    x.addEventListener('click', ()=> cfRemoveCollected(parseInt(x.dataset.idx,10)));
+  });
+
+  chipsBox.querySelectorAll('.chip-play').forEach(btn=>{
+    const idx = parseInt(btn.dataset.idx,10);
+    const name = cfCollected[idx];
+    const p = cfParseChordName(name);
+    if(!p) return;
+    const key = 'chip'+idx;
+    const start = (e)=>{ e.preventDefault(); cfStartChord(p.pc, p.suffix, btn, key); };
+    const stop = ()=>{ cfStopChord(btn, key); };
+    btn.addEventListener('pointerdown', start);
+    btn.addEventListener('pointerup', stop);
+    btn.addEventListener('pointerleave', stop);
+    btn.addEventListener('pointercancel', stop);
+  });
+
+  if(recalcShift){
+    cfCollectedShift = cfComputeBestShift(cfCollected);
+  }
+
+  const shapes = cfCollected.map(name=>{
+    const p = cfParseChordName(name);
+    if(!p) return {label:name, pc:null, suffix:''};
+    const pc = ((p.pc - cfCollectedShift) % 12 + 12) % 12;
+    return {label: CF_PC_TO_NAME[pc] + p.suffix, pc: pc, suffix: p.suffix};
+  });
+
+  let html = '<div class="transposed-result">';
+  html += '<div class="chords">' + shapes.map((s,i)=>
+    '<span class="shape-item">'+
+      '<button class="shape-play" data-idx="'+i+'" aria-label="Ascolta '+s.label+'">&#9658;</button>'+
+      s.label+
+    '</span>'
+  ).join('&nbsp;&nbsp;') + '</div>';
+  html += '<div class="adjustRow"><button id="cf-shiftDown">&minus;</button>';
+  html += '<span>Sposta un po\' più su o più giù</span>';
+  html += '<button id="cf-shiftUp">+</button></div></div>';
+  resultBox.innerHTML = html;
+
+  resultBox.querySelectorAll('.shape-play').forEach(btn=>{
+    const idx = parseInt(btn.dataset.idx,10);
+    const s = shapes[idx];
+    if(s.pc === null) return;
+    const key = 'shape'+idx;
+    const start = (e)=>{ e.preventDefault(); cfStartChord(s.pc, s.suffix, btn, key); };
+    const stop = ()=>{ cfStopChord(btn, key); };
+    btn.addEventListener('pointerdown', start);
+    btn.addEventListener('pointerup', stop);
+    btn.addEventListener('pointerleave', stop);
+    btn.addEventListener('pointercancel', stop);
+  });
+
+  document.getElementById('cf-shiftDown').addEventListener('click', ()=>{
+    cfCollectedShift = ((cfCollectedShift - 1) % 12 + 12) % 12;
+    cfRenderCollected(false);
+  });
+  document.getElementById('cf-shiftUp').addEventListener('click', ()=>{
+    cfCollectedShift = ((cfCollectedShift + 1) % 12 + 12) % 12;
+    cfRenderCollected(false);
+  });
+}
+
+document.getElementById('cf-clearCollected').addEventListener('click', ()=>{
+  cfCollected = [];
+  cfRenderCollected(false);
+});
+
+cfRenderCollected(false);
+cfBuildUI();
 
 loadData();
 </script>
