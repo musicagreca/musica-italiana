@@ -98,6 +98,21 @@
     display:inline-flex; align-items:center; justify-content:center; margin-right:.3rem;
   }
   .chip-play.playing, .shape-play.playing{background:#1e7a34}
+
+  .keychange-box{
+    margin-top:1rem; background:var(--bg); border:1px dashed var(--acc); border-radius:8px;
+    padding:.7rem .8rem;
+  }
+  .keychange-hdr{font-size:.85rem; color:var(--acc); font-weight:700; margin-bottom:.4rem}
+  .keychange-sub{font-size:.78rem; color:var(--t3); margin-bottom:.5rem}
+  .keychange-row{display:flex; align-items:center; gap:.6rem; flex-wrap:wrap}
+  .keychange-row button{
+    border:1px solid var(--bor); background:#fff; color:var(--txt);
+    border-radius:8px; width:32px; height:32px; font-size:1.1rem; cursor:pointer;
+  }
+  .keychange-row button:disabled{opacity:.35; cursor:default}
+  .keychange-val{font-size:.85rem; color:var(--t2); min-width:70px; text-align:center}
+  .keychange-chords{font-size:1.1rem; font-weight:700; margin-top:.5rem}
   .shape-item{display:inline-flex; align-items:center; gap:.15rem}
 </style>
 </head>
@@ -124,6 +139,11 @@
   </div>
   <div class="collected-chips" id="collectedChips"></div>
   <div id="collectedResult"></div>
+  <div class="keychange-box">
+    <div class="keychange-hdr">Prova un'altra tonalità (temporaneo)</div>
+    <div class="keychange-sub">Non modifica gli accordi qui sopra — è solo un tentativo a parte.</div>
+    <div id="keychangeBody"></div>
+  </div>
 </div>
 
 <script>
@@ -355,6 +375,7 @@ function parseChordName(name){
 
 let collected = [];
 let collectedShift = 0;
+let keyShift2 = 0;
 
 function addCollected(name){
   collected.push(name);
@@ -388,6 +409,8 @@ function renderCollected(recalcShift){
   if(collected.length === 0){
     chipsBox.innerHTML = '<span class="collected-empty">Clicca sul nome di un accordo qui sopra per aggiungerlo qui.</span>';
     resultBox.innerHTML = '';
+    keyShift2 = 0;
+    renderKeyChange();
     return;
   }
 
@@ -460,6 +483,58 @@ function renderCollected(recalcShift){
   document.getElementById('cShiftUp').addEventListener('click', ()=>{
     collectedShift = ((collectedShift + 1) % 12 + 12) % 12;
     renderCollected(false);
+  });
+
+  renderKeyChange();
+}
+
+function renderKeyChange(){
+  const box = document.getElementById('keychangeBody');
+  if(!box) return;
+
+  if(collected.length === 0){
+    box.innerHTML = '<span class="collected-empty">Aggiungi prima qualche accordo qui sopra.</span>';
+    return;
+  }
+
+  const shapes = collected.map(name=>{
+    const p = parseChordName(name);
+    if(!p) return {label:name, pc:null, suffix:''};
+    const pc = ((p.pc + keyShift2) % 12 + 12) % 12;
+    return {label: PC_TO_NAME[pc] + p.suffix, pc: pc, suffix: p.suffix};
+  });
+
+  let html = '<div class="keychange-row">';
+  html += '<button id="kShiftDown"'+(keyShift2<=-6?' disabled':'')+'>&minus;</button>';
+  html += '<span class="keychange-val">'+(keyShift2>0?'+':'')+keyShift2+' semitoni</span>';
+  html += '<button id="kShiftUp"'+(keyShift2>=6?' disabled':'')+'>+</button>';
+  html += '</div>';
+  html += '<div class="keychange-chords">' + shapes.map((s,i)=>
+    '<span class="shape-item">'+
+      '<button class="shape-play" data-idx="'+i+'" aria-label="Ascolta '+s.label+'">&#9658;</button>'+
+      s.label+
+    '</span>'
+  ).join('&nbsp;&nbsp;') + '</div>';
+  box.innerHTML = html;
+
+  box.querySelectorAll('.shape-play').forEach(btn=>{
+    const idx = parseInt(btn.dataset.idx,10);
+    const s = shapes[idx];
+    if(s.pc === null) return;
+    const key = 'kshape'+idx;
+    const start = (e)=>{ e.preventDefault(); startChord(s.pc, s.suffix, btn, key); };
+    const stop = ()=>{ stopChord(btn, key); };
+    btn.addEventListener('pointerdown', start);
+    btn.addEventListener('pointerup', stop);
+    btn.addEventListener('pointerleave', stop);
+    btn.addEventListener('pointercancel', stop);
+  });
+
+  document.getElementById('kShiftDown').addEventListener('click', ()=>{
+    if(keyShift2>-6){ keyShift2--; renderKeyChange(); }
+  });
+  document.getElementById('kShiftUp').addEventListener('click', ()=>{
+    if(keyShift2<6){ keyShift2++; renderKeyChange(); }
   });
 }
 
