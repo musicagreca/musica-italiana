@@ -393,6 +393,13 @@
   }
   .browse-row:hover{ padding-left:10px; background:rgba(180,144,61,0.08); }
   .browse-name{ font-family:'Fraunces', serif; font-weight:600; font-size:1.05rem; color:var(--wine-dark); }
+  .bio-mark{ font-family:'JetBrains Mono', monospace; font-size:0.68rem; text-transform:uppercase; letter-spacing:.06em; color:var(--gold); border:1px solid var(--gold-soft); border-radius:10px; padding:1px 7px; margin-left:8px; }
+  .bio-card{ background:#fffdf8; border:1px solid var(--gold-soft); border-radius:6px; padding:18px 20px; margin:0 0 22px; display:flow-root; }
+  .bio-card h2{ font-family:'Fraunces', serif; color:var(--wine-dark); margin:0 0 2px; font-size:1.5rem; }
+  .bio-card .bio-life{ font-family:'JetBrains Mono', monospace; font-size:0.78rem; color:var(--wine); margin:0 0 12px; }
+  .bio-card img{ float:right; width:120px; max-width:35%; margin:0 0 10px 16px; border-radius:4px; }
+  .bio-card p{ margin:0 0 10px; line-height:1.6; }
+  .bio-card a{ color:var(--wine); }
   .browse-count{ font-family:'JetBrains Mono', monospace; font-size:0.76rem; color:var(--wine); opacity:0.7; }
 
   /* --- vista dettaglio canzone --- */
@@ -549,6 +556,7 @@
     </div>
 
     <div id="breadcrumb-wrap"></div>
+    <div id="bio-wrap"></div>
 
     <input type="text" id="search" placeholder="Cerca per titolo, autore o cantante…">
     <div class="alpha-bar" id="alpha-bar"></div>
@@ -736,6 +744,9 @@
 <script src="chords.js"></script>
 <script>
 let SONGS = [];
+let PERSONE = [];
+function normName(s){ return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }
+function findPersona(name){ const k=normName(name); return PERSONE.find(p => normName(p.nome)===k || (p.alias||'').split(',').some(a => normName(a)===k)); }
 let currentSong = null;
 let currentSemitones = 0;
 let currentView = 'accordi';
@@ -751,6 +762,7 @@ async function loadData(){
     const res = await fetch('dati.json?_=' + Date.now());
     const json = await res.json();
     SONGS = json.canzoni || [];
+    PERSONE = json.persone || [];
   }catch(e){
     SONGS = [];
   }
@@ -765,6 +777,11 @@ function route(){
     if(song){ openSong(song, p.get('view') || 'accordi'); return; }
   }
   closeSong();
+  const pid = p.get('persona');
+  if(pid){
+    const per = PERSONE.find(x => x.id === pid);
+    if(per){ const asSinger = SONGS.some(s => splitNames(s.cantante).some(n => normName(n)===normName(per.nome))); showFilteredList(asSinger?'cantante':'autore', per.nome); return; }
+  }
   const filterRole = p.get('filter');
   const filterName = p.get('nome');
   if(filterRole && filterName){
@@ -788,6 +805,7 @@ function setActiveTab(tab){
   spinteLetter = null;
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.getElementById('breadcrumb-wrap').innerHTML = '';
+  document.getElementById('bio-wrap').innerHTML = '';
   document.getElementById('accordi-view').style.display = 'none';
   document.getElementById('list-count').style.display = (tab === 'tutte' || tab === 'triestine') ? 'block' : 'none';
   if(tab === 'accordi'){
@@ -908,7 +926,7 @@ function renderBrowse(role){
   names.forEach(name => {
     const row = document.createElement('div');
     row.className = 'browse-row';
-    row.innerHTML = `<span class="browse-name">${escapeHtml(name)}</span><span class="browse-count">${counts[name]} canzon${counts[name]===1?'e':'i'}</span>`;
+    row.innerHTML = `<span class="browse-name">${escapeHtml(name)}${findPersona(name)?'<span class="bio-mark">scheda</span>':''}</span><span class="browse-count">${counts[name]} canzon${counts[name]===1?'e':'i'}</span>`;
     row.addEventListener('click', () => navigateTo({filter: role, nome: name}));
     el.appendChild(row);
   });
@@ -929,7 +947,14 @@ function showFilteredList(role, name){
   document.getElementById('browse-list').style.display = 'none';
   document.getElementById('song-list').style.display = 'flex';
 
-  const filtered = SONGS.filter(s => namesForRole(s, role).includes(name))
+  const per = findPersona(name);
+  const bw = document.getElementById('bio-wrap');
+  if(per){
+    const life = [per.nato && ('Nato: ' + per.nato), per.morto && ('Morto: ' + per.morto)].filter(Boolean).join(' · ');
+    const paras = (per.bio||'').split(/\n\s*\n/).map(t => t.trim()).filter(Boolean).map(t => '<p>' + escapeHtml(t).replace(/\n/g,'<br>') + '</p>').join('');
+    bw.innerHTML = `<div class="bio-card">${per.foto ? `<img src="${escapeHtml(per.foto)}" alt="" onerror="this.remove()">` : ''}<h2>${escapeHtml(per.nome)}</h2>${(life||per.ruoli) ? `<p class="bio-life">${escapeHtml([per.ruoli, life].filter(Boolean).join(' — '))}</p>` : ''}${paras}${per.link ? `<p><a href="${escapeHtml(per.link)}" target="_blank" rel="noopener">Approfondisci ↗</a></p>` : ''}</div>`;
+  } else bw.innerHTML = '';
+  const filtered = SONGS.filter(s => namesForRole(s, role).some(n => n === name || (per && findPersona(n) === per)))
     .sort((a,b) => (a.titolo||'').localeCompare(b.titolo||'', 'it'));
   renderSongRows(filtered, name);
 }
