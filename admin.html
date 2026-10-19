@@ -326,7 +326,11 @@ function renderNameBrowse(role, filter){
       document.getElementById('btn-mode-canzoni').classList.add('active');
       document.getElementById('btn-mode-autori').classList.remove('active');
       document.getElementById('btn-mode-cantanti').classList.remove('active');
+      document.getElementById('btn-mode-schede').classList.remove('active');
+      document.getElementById('person-form').style.display = 'none';
+      document.getElementById('song-form').style.display = 'block';
       document.getElementById('admin-search').value = name;
+      document.getElementById('list-heading').innerHTML = escapeHtml(name) + ' (<span id="count">0</span>)';
       renderList(name);
     });
     listEl.appendChild(row);
