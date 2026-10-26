@@ -108,7 +108,8 @@
     <div id="status-msg"></div>
 
     <div id="person-form" style="display:none;">
-      <h3 style="font-family:'Fraunces',serif;color:var(--wine);margin:0 0 14px;">Scheda persona</h3>
+      <h3 style="font-family:'Fraunces',serif;color:var(--wine);margin:0 0 14px;">Scheda persona <button type="button" id="p-paste-btn" style="font-size:.8rem;margin-left:10px;">📋 Incolla dai dischi</button></h3>
+      <div id="p-dischi-info" style="display:none;font-size:.85rem;background:#fbf6e9;border:1px solid #e6d7b0;border-radius:4px;padding:8px 10px;margin:0 0 12px;max-height:220px;overflow:auto"></div>
       <div class="field"><label>Nome (scritto come nelle canzoni)</label><input type="text" id="p-nome" list="dl-nomi"><datalist id="dl-nomi"></datalist></div>
       <div class="field"><label>Altri nomi (separati da virgola)</label><input type="text" id="p-alias" placeholder="Es. Faber, F. De André"></div>
       <div class="field"><label>Ruoli</label><input type="text" id="p-ruoli" placeholder="Es. cantautore, paroliere"></div>
@@ -485,6 +486,19 @@ document.getElementById('p-save-btn').addEventListener('click', () => {
   persist();
   document.getElementById('p-delete-btn').style.display = 'inline-block';
   renderSchede(document.getElementById('admin-search').value);
+});
+document.getElementById('p-paste-btn').addEventListener('click', async () => {
+  let t='';try{t=await navigator.clipboard.readText()}catch(e){}
+  if(!t||t.indexOf('SCHEDA-DISCHI:')<0)t=prompt('Incolla qui i dati copiati da «I miei dischi» (Ctrl+V) e premi OK:')||'';
+  const i=t.indexOf('SCHEDA-DISCHI:');if(i<0){if(t)alert('Non trovo i dati: in «I miei dischi» premi prima «✍️ Scrivi la scheda».');return}
+  let d;try{d=JSON.parse(t.slice(i+14))}catch(e){alert('I dati copiati non sono completi: riprova.');return}
+  const pi=personaFor(d.name);
+  if(pi>=0){loadPersona(pi);showStatus('Questa persona ha già una scheda: l\u2019ho aperta.','ok');}
+  else{loadPersona(null,d.name);
+    const set=(k,v)=>{const e=document.getElementById('p-'+k);if(e&&!e.value&&v)e.value=v};
+    set('alias',d.nick);set('ruoli',d.ruoli);set('nato',d.born);set('morto',d.died);}
+  const el=document.getElementById('p-dischi-info');
+  el.innerHTML='<b>Dai tuoi dischi</b>'+(d.nick?' · soprannome «'+escapeHtml(d.nick)+'»':'')+' · '+d.tot+' brani'+(d.instr?' · '+escapeHtml(d.instr):'')+'<br>'+(d.discs||[]).map(x=>'• '+escapeHtml(x)).join('<br>');el.style.display='block';
 });
 document.getElementById('p-delete-btn').addEventListener('click', () => {
   if(currentPersona === null) return;
