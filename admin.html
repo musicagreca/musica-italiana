@@ -202,6 +202,7 @@
         <button class="secondary" id="import-btn">Importa file…</button>
         <input type="file" id="import-file" accept=".json" style="display:none;">
       </div>
+      <div id="backup-list"></div>
       <p class="hint">Dopo ogni sessione di lavoro scarica dati.json e sostituiscilo nella cartella del sito (e su GitHub), così index.html mostra le modifiche.</p>
     </div>
   </main>
@@ -215,28 +216,78 @@ let currentPersona = null;
 let currentId = null;
 const STORAGE_KEY = 'canzoniere_dati';
 
-function load(){
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if(raw){
-    try{ const j = JSON.parse(raw); SONGS = j.canzoni || []; PERSONE = j.persone || []; }catch(e){ SONGS = []; PERSONE = []; }
+/* Memoria grande del browser (IndexedDB) + copia automatica giornaliera (ultime 10) */
+let IDB = null;
+function idbOpen(){return new Promise((res,rej)=>{try{const r=indexedDB.open('canzoniere_admin',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})}
+function idbGet(k){return new Promise((res,rej)=>{const q=IDB.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
+function idbSet(k,v){return new Promise((res,rej)=>{const t=IDB.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error||new Error('scrittura annullata'))})}
+function idbKeys(){return new Promise((res,rej)=>{const q=IDB.transaction('kv').objectStore('kv').getAllKeys();q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
+function idbDel(k){return new Promise(res=>{const t=IDB.transaction('kv','readwrite');t.objectStore('kv').delete(k);t.oncomplete=()=>res();t.onerror=()=>res()})}
+let loadFailed = false;
+async function load(){
+  try{ IDB = await idbOpen(); try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist(); }catch(e){} }catch(e){ IDB = null; }
+  let j = null;
+  if(IDB){
+    j = await idbGet(STORAGE_KEY);
+    if(j === undefined){
+      // primo avvio con la memoria nuova: sposto i dati dal localStorage
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){ try{ j = JSON.parse(raw); await idbSet(STORAGE_KEY, j); localStorage.removeItem(STORAGE_KEY); }catch(e){ loadFailed = true; j = null; } }
+    }
+  } else {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ try{ j = JSON.parse(raw); }catch(e){ loadFailed = true; } }
   }
+  if(j){ SONGS = j.canzoni || []; PERSONE = j.persone || []; }
+  if(loadFailed) showStatus('⚠️ Non riesco a leggere i dati salvati: NON salvare niente, importa l\'ultimo dati.json.', 'err', true);
+  else if(!SONGS.length) showStatus('⚠️ Memoria vuota: importa l\'ultimo dati.json (Importa file…) prima di lavorare.', 'err', true);
+  else if(!IDB) showStatus('⚠️ Memoria grande non disponibile in questo browser: esporta spesso dati.json.', 'err', true);
   renderList();
+  refreshDatalists();
+  backupDaily();
+}
+async function backupDaily(){
+  if(!IDB || !SONGS.length) return;
+  try{
+    const k = 'backup-' + new Date().toISOString().slice(0,10);
+    if(!(await idbGet(k))) await idbSet(k, {date:new Date().toISOString(), canzoni:SONGS, persone:PERSONE});
+    const ks = (await idbKeys()).filter(x => String(x).startsWith('backup-')).sort();
+    while(ks.length > 10) await idbDel(ks.shift());
+  }catch(e){}
+  renderBackups();
+}
+async function renderBackups(){
+  const el = document.getElementById('backup-list'); if(!el || !IDB) return;
+  let ks = []; try{ ks = (await idbKeys()).filter(x => String(x).startsWith('backup-')).sort().reverse(); }catch(e){}
+  el.innerHTML = ks.length ? '<p class="hint" style="margin:10px 0 4px">Copie automatiche (una al giorno, le ultime 10):</p>' + ks.map(k => `<button class="secondary" style="padding:4px 10px;margin:2px 4px 2px 0;font-size:.8rem" data-bk="${k}">⬇ ${k.slice(7).split('-').reverse().join('/')}</button>`).join('') : '';
+  el.querySelectorAll('[data-bk]').forEach(b => b.addEventListener('click', async () => {
+    const d = await idbGet(b.dataset.bk); if(!d) return;
+    const blob = new Blob([JSON.stringify({canzoni:d.canzoni, persone:d.persone}, null, 2)], {type:'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'dati_copia_' + b.dataset.bk.slice(7) + '.json'; a.click();
+  }));
 }
 
 function persist(){
+  if(loadFailed){ showStatus('Salvataggio bloccato: prima importa l\'ultimo dati.json.', 'err', true); return; }
+  const data = {canzoni: SONGS, persone: PERSONE};
+  if(IDB){
+    idbSet(STORAGE_KEY, data).then(() => showStatus('Salvato ✓', 'ok'))
+      .catch(e => showStatus('Attenzione: salvataggio fallito! Esporta subito dati.json per non perdere le modifiche. (' + (e && e.message) + ')', 'err', true));
+    return;
+  }
   try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({canzoni: SONGS, persone: PERSONE}));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     showStatus('Salvato in locale ✓', 'ok');
   }catch(e){
-    showStatus('Attenzione: salvataggio locale fallito (spazio pieno?). Esporta subito dati.json per non perdere le modifiche!', 'err');
+    showStatus('Attenzione: salvataggio locale fallito (spazio pieno?). Esporta subito dati.json per non perdere le modifiche!', 'err', true);
   }
 }
 
-function showStatus(msg, cls){
+function showStatus(msg, cls, keep){
   const el = document.getElementById('status-msg');
   el.textContent = msg;
   el.className = cls;
-  setTimeout(() => { if(el.textContent === msg) el.textContent=''; }, 4000);
+  if(!keep) setTimeout(() => { if(el.textContent === msg) el.textContent=''; }, 4000);
 }
 
 let currentLetter = null;
@@ -583,6 +634,7 @@ document.getElementById('import-file').addEventListener('change', (e) => {
       SONGS = json.canzoni || [];
       PERSONE = json.persone || [];
       currentId = null;
+      loadFailed = false;
       persist();
       refreshDatalists();
       render();
@@ -596,7 +648,6 @@ document.getElementById('import-file').addEventListener('change', (e) => {
 });
 
 load();
-refreshDatalists();
 </script>
 </body>
 </html>
