@@ -2699,7 +2699,7 @@
       "testo": "Mi gavevo una galina\nCo’ la piuma, co’ la piuma molisina,\nche la sera e la matina\nla faceva cocodè.\nCocorocò, cocò, Corococò, codè!\n\nLa gaveva el suo bel covo\nSoto el vecio, soto el vecio fogoler,\nma co la faceva l’ovo,\nla cantava de piazer.\nCocorocò, cocò, Corococò, codè!\n\nVegno a casa un bel giorno,\ntrovo zita, trovo zita la cusina:\npiù no iera la galina\nche faceva cocodè\nCocorocò, cocò, Corococò, codè!\n\nA mia moglie ghe dimando:\n“Dove xe, dove xe la galineta?”\n“La xe in tecia, povareta,\nfra ‘l butiro e ‘l pan gratà.”\nCocorocò, cocò, Corococò, codè!\n\nMi ve giuro, amici cari,\nche go pianto, che go pianto a sta parola,\nMa co la go vista in tola,\nanca i dedi me son lecà!\nCocorocò, cocò, Corococò, codè!",
       "note": "",
       "link": "",
-      "triestina": false,
+      "triestina": true,
       "spinta": false,
       "id": "la-mia-galina"
     },
@@ -3027,6 +3027,74 @@
       "triestina": true,
       "spinta": false,
       "id": "due-gobbetti"
+    }
+  ],
+  "persone": [
+    {
+      "nome": "883",
+      "alias": "",
+      "ruoli": "gruppo",
+      "nato": "",
+      "morto": "",
+      "foto": "https://musicagreca.github.io/musica-italiana/images/Pezzali_Repetto.jpg",
+      "link": "",
+      "bio": "Gli 883 sono stati un gruppo musicale pop rock italiano formatosi a Pavia nel 1988 e composto inizialmente da Max Pezzali e Mauro Repetto fino al 1994, e successivamente da Pezzali e altri musicisti sino al 2002, quando Max Pezzali decise di continuare la propria carriera come solista.\nSebbene siano principalmente classificati come un gruppo di musica pop, la loro carriera musicale ha attraversato anche altri generi come il rap, la dance e il rock.\nIl nome che deriva dalla cilindrata del modello base della Harley-Davidson Sportster",
+      "id": "883"
+    },
+    {
+      "nome": "Abba",
+      "alias": "",
+      "ruoli": "",
+      "nato": "",
+      "morto": "",
+      "foto": "https://musicagreca.github.io/musica-italiana/images/abba.jpg",
+      "link": "",
+      "bio": "Gli ABBA sono stati un gruppo musicale pop svedese formatosi nel 1972 con la formazione che avrebbe sempre mantenuto: Björn Ulvaeus, Benny Andersson, Agnetha Fältskog e Anni-Frid Lyngstad (meglio conosciuta come \"Frida\").\n\nSpesso considerati tra i gruppi musicali di maggior successo di sempre; nella loro lunga carriera hanno inciso più di 109 brani ed hanno venduto, fino ad oggi, più di 400 milioni di dischi in tutto il mondo, con una costante vendita ogni anno. Gli ABBA hanno raggiunto un successo mondiale e sono considerati tra i più celebri esponenti della musica pop internazionale.\nIl nome del gruppo è un acronimo formato dalle lettere iniziali dei nomi dei membri (Agnetha, Benny, Björn e Anni-Frid), e lo si trova scritto anche come Abba. Nella seconda versione del logo del gruppo, a partire dal 1976 la prima 'B' appare rovesciata (ᗅᗺᗷᗅ) su tutte le copertine dei loro dischi e sul materiale promozionale.\nIl gruppo si sciolse nel 1982. Nel 2018 annunciano il ritorno all'attività, riprendendo a incidere due nuovi brani, di cui uno intitolato I Still Have Faith in You. In un'intervista del 2022 sul quotidiano Britannico The Guardian, Benny Andersson affermò: \"non ci sarà più nulla di tutto ciò\", replicando che Voyage sarebbe stata l'ultima collaborazione come ABBA, sancendo così lo scioglimento definitivo del gruppo.",
+      "id": "abba"
+    },
+    {
+      "nome": "Adolfo Leghissa",
+      "alias": "",
+      "ruoli": "compositore",
+      "nato": "10 novembre 1875, Trieste",
+      "morto": "18 ottobre 1957, Trieste",
+      "foto": "https://musicagreca.github.io/musica-italiana/images/leghissa.jpg",
+      "link": "https://clubtouristitriestini.blogspot.com/2020/10/18-ottobre-1957-muore-adolfo-leghissa.html",
+      "bio": "Adolfo Leghissa era un musicista, cantante e scrittore in dialetto triestino. Veniva da una famiglia molto povera: era portato per lo studio, ma dovette lavorare fin da ragazzo. Fece prima il fabbro, poi il musicista e cantante in una compagnia girovaga di acrobati. Tornato a Trieste, alternò la musica a lavori manuali. Durante la Prima guerra mondiale fu soldato e poi cuoco e manovale. Lo chiamavano il «piccolo Leonardo triestino» per i tanti talenti. Scrisse canzoni popolari in dialetto, fra cui «El torto de mia» e «La mia galina». La sua opera più nota è il libro «Trieste che passa: 1884-1914»: racconta la città portuale di quegli anni, con osti, artisti di strada, artigiani e gente del popolo, spesso dalla sua esperienza diretta. Morì quasi dimenticato e ancora oggi è poco conosciuto; a Trieste gli è dedicata una via.\n\n(ringraziamento a Zeno Saracino)",
+      "id": "adolfo-leghissa"
+    },
+    {
+      "nome": "Aina Diversi",
+      "alias": "",
+      "ruoli": "paroliere",
+      "nato": "1943, Castel Bolognese",
+      "morto": "",
+      "foto": "",
+      "link": "",
+      "bio": "È celebre soprattutto per aver scritto nel 1967 il testo di Qui e là, grande successo di Patty Pravo. Il brano era la versione italiana (con un testo completamente reinventato rispetto all'originale) di Holy Cow, canzone scritta da Allen Toussaint e portata al successo in America da Lee Dorsey.\nNel corso della sua carriera ha collaborato con grandi nomi della musica e della discografia italiana, tra cui il produttore Sergio Bardotti, scrivendo testi anche per altri artisti dell'epoca beat come i Rokes.",
+      "id": "aina-diversi"
+    },
+    {
+      "nome": "Fabrizio De André",
+      "alias": "",
+      "ruoli": "cantante, compositore, paroliere",
+      "nato": "18 febbraio 1940, Genova,",
+      "morto": "11 gennaio 1999, Milano",
+      "foto": "",
+      "link": "",
+      "bio": "Considerato uno dei maggiori cantautori italiani, è conosciuto anche con l'appellativo di Faber che gli dette l'amico Paolo Villaggio, con riferimento alla sua predilezione per i pastelli e le matite della Faber-Castell, oltre che per l'assonanza con il suo nome, e talvolta come \"il cantautore degli emarginati\" o il \"poeta degli sconfitti\".\n\nIn quasi quarant'anni di attività artistica, De André ha inciso quattordici album in studio, più alcune canzoni pubblicate solo come singoli e poi riedite in antologie. Molte sue canzoni raccontano storie di emarginati, ribelli e prostitute, e alcune per il loro valore poetico sono state accolte da antologie scolastiche già dai primi anni settanta. I testi hanno meritato a De André l'elogio del poeta Mario Luzi.\n\nInsieme a Bruno Lauzi, Gino Paoli, Umberto Bindi e Luigi Tenco, è uno degli esponenti della cosiddetta scuola genovese, un nucleo di artisti che rinnovò profondamente la musica leggera italiana. È l'artista con il maggior numero di riconoscimenti da parte del Club Tenco, con sei Targhe e un Premio Tenco. La popolarità e l'alto livello artistico del suo canzoniere hanno spinto alcune istituzioni, dopo la sua morte, a dedicargli vie, piazze, parchi, teatri, biblioteche e scuole.\n\nDi idee anarchiche e pacifiste, è stato anche uno degli artisti che maggiormente hanno valorizzato la lingua ligure. Ha affrontato inoltre, in misura minore e differente, altri idiomi, come il gallurese e il napoletano. Durante la sua carriera ha collaborato con personalità della cultura e importanti artisti della scena musicale e culturale italiana, tra cui Elvio Monti, Gian Piero Reverberi, i New Trolls, Mina, Nicola Piovani, Giuseppe Bentivoglio, la Premiata Forneria Marconi, i Tazenda, Ivano Fossati, Mauro Pagani, Massimo Bubola, Álvaro Mutis, Fernanda Pivano e Francesco De Gregori.",
+      "id": "fabrizio-de-andre"
+    },
+    {
+      "nome": "Adriano Celentano",
+      "alias": "il Molleggiato",
+      "ruoli": "voce, testo, musica, chitarra",
+      "nato": "6 gennaio 1938, Milano",
+      "morto": "",
+      "foto": "https://musicagreca.github.io/musica-italiana/images/celentano.jpg",
+      "link": "",
+      "bio": "Cresciuto nella celebre via Gluck a Milano, lascia presto la scuola per lavorare (facendo anche l'orologiaio). Nel 1957 debutta al primo Festival del rock italiano a Milano e balza rapidamente alla fama nazionale. Nel 1961 fonda il Clan Celentano, una delle prime etichette discografiche indipendenti gestite da un artista in Italia. Sposato dal 1964 con Claudia Mori, dagli anni '70 unisce la musica a una fortunatissima carriera cinematografica come attore e regista campione d'incassi (Il bisbetico domato). Dagli anni '90 diventa l'assoluto protagonista della televisione italiana con i suoi celebri e discussi show-evento caratterizzati da lunghi monologhi di stampo sociale e ambientale.\nÈ uno dei cantanti italiani più importanti e di maggior successo di sempre, con oltre 150-200 milioni di dischi venduti in tutto il mondo. Soprannominato \"il Molleggiato\" per le sue movenze sul palco, ha introdotto il rock 'n' roll in Italia alla fine degli anni '50 e ha interpretato pietre miliari della musica italiana come Azzurro, 24mila baci e L'emozione non ha voce.\nHa composto e firmato le musiche di moltissimi dei suoi capolavori storici (tra cui Il ragazzo della via Gluck, Il tuo bacio è come un rock, Chi non lavora non fa l'amore e Svalutation).\nHa partecipato regolarmente alla scrittura dei testi, collaborando con storici parolieri del suo entourage (come Miki Del Prete, Luciano Beretta e successivamente Mogol). Per molti anni, per sua stessa generosità, ha preferito non firmare ufficialmente alcuni brani, lasciando i diritti ad amici e collaboratori.\nSul palco e in studio si è cimentato principalmente come chitarrista, accompagnando spesso le sue esecuzioni dal vivo. Pur non essendo un virtuoso tecnico dello strumento, la chitarra acustica e quella elettrica hanno sempre fatto parte della sua iconografia e della sua attitudine rock fin dagli esordi con i Rock Boys alla fine degli anni '50",
+      "id": "adriano-celentano"
     }
   ]
 }
